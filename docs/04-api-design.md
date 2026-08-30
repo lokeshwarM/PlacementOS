@@ -45,4 +45,4 @@ OpenAPI documentation (Swagger UI) is **intentionally deferred** as per mileston
 
 ## Internal/Future APIs (Deferred)
 - Processed Email APIs are internal and intentionally excluded from public endpoints.
-- Authentication/Security will be added in the security milestone.
+- **Security**: The application is protected by Spring Security. `/api/v1/**` is temporarily permitted for development, but will be secured with JWT bearer tokens in the future.

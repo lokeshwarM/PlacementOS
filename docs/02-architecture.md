@@ -59,3 +59,9 @@ Student Notification
 - Queue-based
 - One parse per email
 - Migration-based schema management
+
+## Security Architecture
+
+- **Application Security Boundary**: Spring Security protects all application endpoints. Controller logic is agnostic to the authentication mechanism to allow flexible identity provider substitution.
+- **Identity Separation**: Student authentication (to use the application) is fundamentally separate from system source authentication (e.g., Gmail OAuth to read ingestion mailboxes).
+- **Stateless Future**: The application is configured to eventually use stateless JWT/Bearer tokens. HTTP Sessions and CSRF are disabled.

@@ -69,3 +69,19 @@ Why are Flyway and JPA both used?
 
 Answer:
 Flyway owns explicit, versioned database schema changes. Every structural change to the database is a migration file that can be replayed in any environment. JPA maps Java domain objects to that schema and provides the persistence abstractions (repositories, type-safe queries) that the Spring Boot business layer uses. Hibernate is configured with `ddl-auto=validate` — it validates the existing schema on startup but never silently modifies it. This combination gives you reproducible schema management and a clean Java programming model without letting the ORM surprise you in production.
+
+---
+
+Question:
+Why separate student authentication from Gmail authentication?
+
+Answer:
+Student authentication establishes application identity and authorization. Gmail authentication grants the ingestion component access to an external mailbox. They serve different trust boundaries.
+
+---
+
+Question:
+Why introduce Spring Security before implementing the identity provider?
+
+Answer:
+The controllers and services should be built behind a stable security boundary so authentication mechanisms can change without rewriting business logic.

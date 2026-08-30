@@ -97,3 +97,23 @@ Use JPA entities as a persistence mapping layer over the Flyway-managed PostgreS
 Flyway remains responsible for explicit schema evolution while JPA provides type-safe object-relational mapping and repository abstractions for the Spring Boot business layer.
 ### Trade-off
 Entity definitions must remain synchronized with the versioned database schema. Flyway migrations, not Hibernate, remain the authoritative source of structural change.
+
+---
+
+## D-013
+### Decision
+Separate application user authentication from CDC Gmail source authentication.
+### Reason
+Students authenticate to PlacementOS as users, while Gmail access represents an external data source used for placement ingestion. These are different security domains and should not be coupled.
+### Trade-off
+Requires two separate authentication/integration flows.
+
+---
+
+## D-014
+### Decision
+Introduce Spring Security before production API exposure.
+### Reason
+The application contains student-specific placement, application, notification and reminder data that must not be accessible across users.
+### Trade-off
+Adds security configuration before the external identity provider is selected.
