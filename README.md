@@ -25,6 +25,14 @@ To run the application locally, you must provide your own Neon PostgreSQL creden
 3. Update the `.env` file with your `SPRING_DATASOURCE_URL` (this single URL should contain your username, password, and SSL parameters).
 4. The `backend/.env` file is ignored by Git to ensure secrets are never committed.
 
+## Database
+
+- **Provider**: Neon PostgreSQL (hosted)
+- **Schema management**: Flyway — versioned SQL migrations in `backend/src/main/resources/db/migration/`
+- **Credentials**: Environment-based via `SPRING_DATASOURCE_URL` only — never hardcoded
+- **Persistence owner**: Spring Boot exclusively — Python never writes directly to business tables
+- **Hibernate**: Configured with `ddl-auto=validate` — validates schema only, never mutates it
+
 ## Status
 
-Database Setup Phase
+Database Schema Phase

@@ -62,8 +62,28 @@ Development depends on network connectivity and an external hosted database.
 
 ## D-007
 ### Decision
-Keep database credentials in backend/.env for local development and use environment variables in application configuration.
+Keep database credentials in `backend/.env` for local development and use a single `SPRING_DATASOURCE_URL` environment variable in application configuration.
 ### Reason
-Secrets must not be hardcoded into source files or committed to the repository.
+Secrets must not be hardcoded into source files or committed to the repository. Embedding credentials in the URL simplifies configuration to a single variable.
 ### Trade-off
 Each development environment must provide its own configuration.
+
+---
+
+## D-008
+### Decision
+Use Flyway for versioned PostgreSQL schema migrations.
+### Reason
+The schema is expected to evolve as PlacementOS grows. Versioned migrations provide reproducible database changes across environments and avoid relying on automatic ORM schema mutation.
+### Trade-off
+Schema changes require explicit migration files and discipline.
+
+---
+
+## D-009
+### Decision
+Store a separate `processed_emails` table with a unique Gmail message ID.
+### Reason
+Multiple trusted CDC inboxes may receive the same email. A unique message identifier provides idempotent ingestion and prevents duplicate processing.
+### Trade-off
+Processed message metadata must be retained.
