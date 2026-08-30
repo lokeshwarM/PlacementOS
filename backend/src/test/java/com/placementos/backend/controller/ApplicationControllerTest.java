@@ -44,24 +44,18 @@ class ApplicationControllerTest {
 
     @Test
     void createApplication_success_returns201() throws Exception {
-        ApplicationRequest request = new ApplicationRequest();
-        request.setStudentId(1L);
-        request.setPlacementDriveId(2L);
+        ApplicationRequest request = createTestRequest(1L, 2L);
 
         Application application = new Application();
-        try {
-            var idField = Application.class.getDeclaredField("id");
-            idField.setAccessible(true);
-            idField.set(application, 100L);
-            
-            Student s = new Student();
-            var sid = Student.class.getDeclaredField("id"); sid.setAccessible(true); sid.set(s, 1L);
-            application.setStudent(s);
-            
-            PlacementDrive pd = new PlacementDrive();
-            var pdid = PlacementDrive.class.getDeclaredField("id"); pdid.setAccessible(true); pdid.set(pd, 2L);
-            application.setPlacementDrive(pd);
-        } catch (Exception e) {}
+        org.springframework.test.util.ReflectionTestUtils.setField(application, "id", 100L);
+        
+        Student s = new Student();
+        org.springframework.test.util.ReflectionTestUtils.setField(s, "id", 1L);
+        application.setStudent(s);
+        
+        PlacementDrive pd = new PlacementDrive();
+        org.springframework.test.util.ReflectionTestUtils.setField(pd, "id", 2L);
+        application.setPlacementDrive(pd);
 
         when(applicationService.createApplication(1L, 2L)).thenReturn(application);
 
@@ -73,9 +67,7 @@ class ApplicationControllerTest {
 
     @Test
     void createApplication_duplicate_returns409() throws Exception {
-        ApplicationRequest request = new ApplicationRequest();
-        request.setStudentId(1L);
-        request.setPlacementDriveId(2L);
+        ApplicationRequest request = createTestRequest(1L, 2L);
 
         when(applicationService.createApplication(1L, 2L))
                 .thenThrow(DuplicateResourceException.application(1L, 2L));
@@ -85,5 +77,12 @@ class ApplicationControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409));
+    }
+
+    private ApplicationRequest createTestRequest(Long studentId, Long placementDriveId) {
+        ApplicationRequest request = new ApplicationRequest();
+        request.setStudentId(studentId);
+        request.setPlacementDriveId(placementDriveId);
+        return request;
     }
 }
