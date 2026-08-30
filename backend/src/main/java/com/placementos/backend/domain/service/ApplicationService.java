@@ -89,6 +89,10 @@ public class ApplicationService {
     // Reads
     // -------------------------------------------------------------------------
 
+    public Optional<Application> findById(Long id) {
+        return applicationRepository.findById(id);
+    }
+
     public Optional<Application> findByStudentAndDrive(Long studentId, Long placementDriveId) {
         return applicationRepository.findByStudentIdAndPlacementDriveId(studentId, placementDriveId);
     }

@@ -95,4 +95,12 @@ public class ReminderService {
     public Optional<ReminderTask> findByStudentAndDrive(Long studentId, Long placementDriveId) {
         return reminderTaskRepository.findByStudentIdAndPlacementDriveId(studentId, placementDriveId);
     }
+
+    public List<ReminderTask> findByStudentId(Long studentId) {
+        return reminderTaskRepository.findByStudentId(studentId);
+    }
+
+    public Optional<ReminderTask> findById(Long id) {
+        return reminderTaskRepository.findById(id);
+    }
 }

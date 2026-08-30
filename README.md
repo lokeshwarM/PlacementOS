@@ -35,4 +35,11 @@ To run the application locally, you must provide your own Neon PostgreSQL creden
 
 ## Status
 
-Database Schema Phase
+Service and REST API Layer Phase Completed.
+
+Features:
+- Persistence Layer (Spring Data JPA) with Schema Validation
+- Service Layer (DTO mapping, Business Logic, Exception Definitions)
+- REST API Layer (`/api/v1/`) with Global Exception Handling
+- Standalone MockMVC Unit Tests (27 passing tests)
+- OpenAPI/Swagger is intentionally deferred

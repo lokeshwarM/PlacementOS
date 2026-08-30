@@ -14,6 +14,8 @@ public interface ReminderTaskRepository extends JpaRepository<ReminderTask, Long
 
     Optional<ReminderTask> findByStudentIdAndPlacementDriveId(Long studentId, Long placementDriveId);
 
+    List<ReminderTask> findByStudentId(Long studentId);
+
     boolean existsByStudentIdAndPlacementDriveId(Long studentId, Long placementDriveId);
 
     List<ReminderTask> findByStatus(ReminderStatus status);
