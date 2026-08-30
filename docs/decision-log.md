@@ -137,3 +137,23 @@ Retain the current `reminder_tasks` uniqueness constraint (`student_id`, `placem
 The full reminder scheduling engine is deferred to a future milestone. Redesigning the schema before the reminder logic is fully understood adds premature complexity.
 ### Trade-off
 Multiple reminders (e.g., 13:00, 14:00) for the same student/drive cannot be currently stored.
+
+---
+
+## D-017
+### Decision
+Use Redis as asynchronous infrastructure between event producers and processing workers.
+### Reason
+PlacementOS may need to process a single CDC event and fan out work across multiple processing tasks and thousands of student-specific operations. Asynchronous decoupling prevents a slow processing or notification operation from blocking ingestion.
+### Trade-off
+Introduces another infrastructure dependency and requires retry/idempotency handling.
+
+---
+
+## D-018
+### Decision
+Keep Redis messages small and pass references/identifiers for large payloads.
+### Reason
+Large documents, email bodies, and attachments should not be pushed directly through Redis unnecessarily.
+### Trade-off
+Consumers may need to retrieve the referenced data from persistent storage.

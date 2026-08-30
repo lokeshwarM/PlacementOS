@@ -109,3 +109,19 @@ Why is the current `reminder_tasks` constraint insufficient for the final engine
 
 Answer:
 The current schema enforces uniqueness on `(student_id, placement_drive_id)`. However, the final product requires sending multiple reminders (e.g., 1 hour before deadline, 2 hours before deadline) for the same student and drive. We intentionally retain this limitation for now to avoid over-engineering the schema before the actual reminder scheduling engine is fully designed in a future milestone.
+
+---
+
+Question:
+Why use Redis between Gmail ingestion and processing?
+
+Answer:
+The ingestion path should acknowledge the incoming event quickly and hand work to asynchronous consumers. This isolates ingestion latency from document/AI processing and allows workers to scale independently.
+
+---
+
+Question:
+Why is Redis not the system of record?
+
+Answer:
+Redis is transport and temporary processing infrastructure. PostgreSQL remains the durable source of truth for business state.

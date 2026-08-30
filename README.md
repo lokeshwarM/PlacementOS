@@ -33,14 +33,16 @@ To run the application locally, you must provide your own Neon PostgreSQL creden
 - **Persistence owner**: Spring Boot exclusively — Python never writes directly to business tables
 - **Hibernate**: Configured with `ddl-auto=validate` — validates schema only, never mutates it
 
-## Status
+Status:
 
 Security Foundation Phase Completed.
+Redis Asynchronous Foundation Completed.
 
 Features:
 - Persistence Layer (Spring Data JPA) with Schema Validation
 - Service Layer (DTO mapping, Business Logic, Exception Definitions)
 - REST API Layer (`/api/v1/`) with Global Exception Handling
-- Standalone MockMVC Unit Tests (31 passing tests)
+- Standalone MockMVC Unit Tests (33 passing tests)
 - Spring Security Foundation (Stateless Sessions, CSRF disabled, Strict CORS)
+- Redis Asynchronous Event/Job Foundation (Event Envelopes, JSON Serialization)
 - OpenAPI/Swagger is intentionally deferred

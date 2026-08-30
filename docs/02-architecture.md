@@ -41,7 +41,7 @@ Student Notification
 - **Spring Boot**: Core business backend and sole source of truth for all business state (students, placements, applications, shortlists, notifications, reminders). All persistence goes through Spring Boot.
 - **Python/FastAPI**: Stateless processing service for parsing PDFs, Excel, OCR, and AI-assisted extraction. Python does NOT directly mutate business tables. All parsing results must pass through the Spring Boot API before becoming business state.
 - **PostgreSQL**: Persistent system of record (hosted on Neon PostgreSQL). Schema is managed by Flyway versioned migrations.
-- **Redis**: Asynchronous queue infrastructure (introduced in a later milestone).
+- **Redis**: Asynchronous queue infrastructure used to decouple ingestion (like Gmail) from processing workers. PostgreSQL remains the sole source of truth; Redis is only for transport and temporary processing state.
 - **Next.js**: Frontend interface.
 
 ## Persistence Rules

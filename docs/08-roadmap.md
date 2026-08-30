@@ -3,6 +3,7 @@
 ## V0
 
 - Gmail Watch
+- Redis asynchronous event foundation
 - Placement detection
 - Telegram notifications
 
