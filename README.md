@@ -20,10 +20,11 @@ PlacementOS uses a distributed architecture designed for scalability and clear s
 ## Environment Setup
 
 To run the application locally, you must provide your own Neon PostgreSQL credentials:
-1. Copy `.env.example` to `.env`
-2. Update the `.env` file with your `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD`.
-3. The `.env` file is ignored by Git to ensure secrets are never committed.
+1. Navigate to the `backend/` directory.
+2. Copy `backend/.env.example` to `backend/.env`.
+3. Update the `.env` file with your `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD`.
+4. The `backend/.env` file is ignored by Git to ensure secrets are never committed.
 
 ## Status
 
-Architecture/Setup Phase
+Database Setup Phase

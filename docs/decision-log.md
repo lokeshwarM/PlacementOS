@@ -52,8 +52,18 @@ Local development temporarily depends on host-installed runtime dependencies for
 
 ## D-006
 ### Decision
-Use Neon PostgreSQL as the primary PostgreSQL environment from the early development stage.
+Use Neon PostgreSQL as the primary database environment from the early development stage.
 ### Reason
-It provides a persistent hosted PostgreSQL environment without requiring local database installation and keeps development close to the eventual deployed environment.
+A hosted PostgreSQL environment provides persistent development data and keeps local development closer to the eventual deployment environment without requiring a local PostgreSQL installation.
 ### Trade-off
-Local development depends on network connectivity and an external hosted database.
+Development depends on network connectivity and an external hosted database.
+
+---
+
+## D-007
+### Decision
+Keep database credentials in backend/.env for local development and use environment variables in application configuration.
+### Reason
+Secrets must not be hardcoded into source files or committed to the repository.
+### Trade-off
+Each development environment must provide its own configuration.

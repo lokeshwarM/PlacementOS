@@ -2,8 +2,8 @@
 
 ## Infrastructure
 - **Primary Database**: PostgreSQL (Hosted on Neon)
-- **Configuration**: Database credentials are strictly supplied through environment variables (`DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`).
-- **Security**: Real secrets are never committed. A local `.env` file should be created from `.env.example`.
+- **Configuration**: Database credentials are strictly supplied through environment variables (`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`).
+- **Security**: Real secrets are never committed. A local `.env` file should be created in the `backend/` directory from `backend/.env.example`.
 - **Ownership**: Spring Boot is the ONLY service that owns business persistence. The Python processing service does not directly own business state.
 
 ## students
