@@ -1,0 +1,1 @@
+CREATE INDEX idx_placement_drives_source_email_id ON placement_drives (source_email_id);

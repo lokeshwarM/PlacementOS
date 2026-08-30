@@ -56,7 +56,7 @@ class PlacementDriveServiceTest {
     @Test
     void findBySourceEmailId_found() {
         PlacementDrive drive = buildSavedDrive(1L, "Microsoft", "MSG-XYZ");
-        when(placementDriveRepository.findAll()).thenReturn(java.util.List.of(drive));
+        when(placementDriveRepository.findBySourceEmailId("MSG-XYZ")).thenReturn(Optional.of(drive));
 
         Optional<PlacementDriveResponse> result = placementDriveService.findBySourceEmailId("MSG-XYZ");
 
@@ -66,7 +66,7 @@ class PlacementDriveServiceTest {
 
     @Test
     void findBySourceEmailId_notFound_returnsEmpty() {
-        when(placementDriveRepository.findAll()).thenReturn(java.util.List.of());
+        when(placementDriveRepository.findBySourceEmailId("MISSING")).thenReturn(Optional.empty());
 
         Optional<PlacementDriveResponse> result = placementDriveService.findBySourceEmailId("MISSING");
 

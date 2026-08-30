@@ -80,10 +80,7 @@ public class PlacementDriveService {
      * Used during ingestion to check whether this email already produced a drive record.
      */
     public Optional<PlacementDriveResponse> findBySourceEmailId(String sourceEmailId) {
-        return placementDriveRepository.findAll()
-                .stream()
-                .filter(d -> sourceEmailId.equals(d.getSourceEmailId()))
-                .findFirst()
+        return placementDriveRepository.findBySourceEmailId(sourceEmailId)
                 .map(PlacementDriveResponse::from);
     }
 
