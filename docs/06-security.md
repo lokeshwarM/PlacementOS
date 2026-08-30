@@ -28,7 +28,7 @@ The application defines two conceptual roles:
 ## Temporary Development State
 
 During the current development phase (before the Identity Provider is integrated):
-- `/actuator/health` and `/actuator/info` are permitted publicly.
+- `/actuator/health` (with sensitive internal details restricted) and `/actuator/info` are permitted publicly.
 - All other `/actuator/**` endpoints are strongly denied.
 - Application APIs (`/api/v1/**`) are temporarily permitted to facilitate unblocked development of the frontend and processing components. This will be tightened to require `STUDENT` or `ADMIN` roles once token verification is implemented.
 
