@@ -61,3 +61,11 @@ Why have both `applications` and `placement_drives`?
 
 Answer:
 `placement_drives` represent the opportunity itself — company, deadline, eligibility criteria. `applications` represent an individual student's state for that opportunity (eligible, applied, shortlisted, etc.). Separating them avoids denormalization and allows one drive to have thousands of independent student states.
+
+---
+
+Question:
+Why are Flyway and JPA both used?
+
+Answer:
+Flyway owns explicit, versioned database schema changes. Every structural change to the database is a migration file that can be replayed in any environment. JPA maps Java domain objects to that schema and provides the persistence abstractions (repositories, type-safe queries) that the Spring Boot business layer uses. Hibernate is configured with `ddl-auto=validate` — it validates the existing schema on startup but never silently modifies it. This combination gives you reproducible schema management and a clean Java programming model without letting the ORM surprise you in production.

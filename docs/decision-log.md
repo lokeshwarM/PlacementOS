@@ -87,3 +87,13 @@ Store a separate `processed_emails` table with a unique Gmail message ID.
 Multiple trusted CDC inboxes may receive the same email. A unique message identifier provides idempotent ingestion and prevents duplicate processing.
 ### Trade-off
 Processed message metadata must be retained.
+
+---
+
+## D-010
+### Decision
+Use JPA entities as a persistence mapping layer over the Flyway-managed PostgreSQL schema.
+### Reason
+Flyway remains responsible for explicit schema evolution while JPA provides type-safe object-relational mapping and repository abstractions for the Spring Boot business layer.
+### Trade-off
+Entity definitions must remain synchronized with the versioned database schema. Flyway migrations, not Hibernate, remain the authoritative source of structural change.
