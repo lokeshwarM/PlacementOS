@@ -14,27 +14,37 @@ Redis Queue
 
 ↓
 
-Email Parser
+Email Parser (Python)
 
 ↓
 
-Attachment Parser
+Attachment Parser (Python)
 
 ↓
 
-Placement Database
+Placement Database (Spring Boot)
 
 ↓
 
-Eligibility Engine
+Eligibility Engine (Spring Boot)
 
 ↓
 
-Notification Queue
+Notification Queue (Redis)
 
 ↓
 
 Student Notification
+
+## Distributed System Responsibility
+
+- **Spring Boot**: Core business backend and source of truth for business state (students, placements, rules).
+- **Python/FastAPI**: Stateless processing service for parsing PDFs, Excel, OCR, and AI-assisted extraction.
+- **PostgreSQL**: Persistent system of record.
+- **Redis**: Asynchronous queue infrastructure.
+- **Next.js**: Frontend interface.
+
+*(Note: Docker configuration is intentionally deferred until the deployment milestone)*
 
 ## Principles
 

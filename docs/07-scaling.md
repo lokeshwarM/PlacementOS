@@ -6,11 +6,11 @@ Support thousands of students.
 
 ## Design
 
-- Parse emails once.
-- Evaluate eligibility locally.
-- Queue notifications.
-- Use Redis workers.
-- Prevent duplicate processing.
+- **Spring Boot**: Handles business requests, domain state, and transactions. Can scale horizontally.
+- **Python/FastAPI Workers**: Handle heavy document processing (PDF, Excel, AI) and can scale independently of the core business logic.
+- **Redis**: Provides asynchronous decoupling and robust queue management.
+- **PostgreSQL**: Remains the persistent system of record.
+- Future horizontal scaling should not require changing business ownership between services.
 
 ## Future Scaling
 
