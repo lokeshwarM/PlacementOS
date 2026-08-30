@@ -85,3 +85,27 @@ Why introduce Spring Security before implementing the identity provider?
 
 Answer:
 The controllers and services should be built behind a stable security boundary so authentication mechanisms can change without rewriting business logic.
+
+---
+
+Question:
+Why must notification delivery be idempotent?
+
+Answer:
+Because background workers, retries, and network unreliability can cause the system to attempt sending the same notification multiple times. A composite unique constraint in the database ensures the student only ever receives that specific notification once, regardless of how many times the application layer tries to process it.
+
+---
+
+Question:
+What is the difference between a public health check and exposing internal infrastructure details?
+
+Answer:
+A public health check (like `/actuator/health`) simply returns an UP/DOWN status so that load balancers and orchestrators know the application is alive. Exposing internal infrastructure details (like database versions, free disk space, or configurations) provides potential attackers with a reconnaissance map of your infrastructure. Health checks should be public; health details should be restricted.
+
+---
+
+Question:
+Why is the current `reminder_tasks` constraint insufficient for the final engine, and why keep it for now?
+
+Answer:
+The current schema enforces uniqueness on `(student_id, placement_drive_id)`. However, the final product requires sending multiple reminders (e.g., 1 hour before deadline, 2 hours before deadline) for the same student and drive. We intentionally retain this limitation for now to avoid over-engineering the schema before the actual reminder scheduling engine is fully designed in a future milestone.

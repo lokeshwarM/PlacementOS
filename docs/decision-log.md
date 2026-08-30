@@ -117,3 +117,23 @@ Introduce Spring Security before production API exposure.
 The application contains student-specific placement, application, notification and reminder data that must not be accessible across users.
 ### Trade-off
 Adds security configuration before the external identity provider is selected.
+
+---
+
+## D-015
+### Decision
+Enforce notification idempotency at the database level via a composite unique constraint.
+### Reason
+Worker retries, message queues, or network instability could result in the application attempting to process the same notification event multiple times. A database constraint ensures a student does not receive duplicate notifications for the same drive/channel.
+### Trade-off
+Adds a schema constraint that must be handled properly by the application layer.
+
+---
+
+## D-016
+### Decision
+Retain the current `reminder_tasks` uniqueness constraint (`student_id`, `placement_drive_id`) temporarily, despite its limitation for multiple scheduled reminders.
+### Reason
+The full reminder scheduling engine is deferred to a future milestone. Redesigning the schema before the reminder logic is fully understood adds premature complexity.
+### Trade-off
+Multiple reminders (e.g., 13:00, 14:00) for the same student/drive cannot be currently stored.

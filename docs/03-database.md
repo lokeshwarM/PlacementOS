@@ -168,6 +168,7 @@ Tracks personalised notifications dispatched to students.
 | sent_at            | TIMESTAMPTZ | Nullable                                     |
 | created_at         | TIMESTAMPTZ | UTC, NOT NULL                                |
 
+Unique constraint: `(student_id, placement_drive_id, notification_type, channel)`
 Indexes: `student_id`, `placement_drive_id`, `status`
 
 ---
@@ -187,3 +188,4 @@ Represents a scheduled deadline reminder.
 | updated_at         | TIMESTAMPTZ | UTC, NOT NULL                             |
 
 Unique constraint: `(student_id, placement_drive_id)`
+**Note/Limitation:** This constraint currently limits scheduling multiple reminders (e.g., 13:00, 14:00) for the same student and drive. This schema is intentionally retained for now and will be addressed when the full reminder scheduling model is designed.

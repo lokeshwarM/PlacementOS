@@ -15,7 +15,7 @@
 ## V2
 
 - WhatsApp integration
-- Reminder system
+- Reminder system (requires schema redesign to support multiple scheduled reminders for the same student/drive)
 - Dashboard
 
 ## V3
