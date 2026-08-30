@@ -22,7 +22,7 @@ Attachment Parser (Python)
 
 ↓
 
-Placement Database (Spring Boot)
+Placement Database (Spring Boot + Neon PostgreSQL)
 
 ↓
 
@@ -40,7 +40,7 @@ Student Notification
 
 - **Spring Boot**: Core business backend and source of truth for business state (students, placements, rules).
 - **Python/FastAPI**: Stateless processing service for parsing PDFs, Excel, OCR, and AI-assisted extraction.
-- **PostgreSQL**: Persistent system of record.
+- **PostgreSQL**: Persistent system of record (hosted on Neon PostgreSQL).
 - **Redis**: Asynchronous queue infrastructure.
 - **Next.js**: Frontend interface.
 

@@ -1,5 +1,10 @@
 # Security
 
+## Application Secrets
+
+- **Environment Variables**: Real connection strings and credentials (such as Neon PostgreSQL passwords) must NEVER be hardcoded into the source code, `.yaml` properties, or documentation.
+- **Git Safety**: The `.env` and `.env.*` files are explicitly ignored in `.gitignore` to prevent accidental credential leakage. Only `.env.example` with safe placeholders is tracked.
+
 ## Data Policy
 
 Store only:

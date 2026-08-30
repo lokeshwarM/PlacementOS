@@ -35,3 +35,14 @@ The application contains substantial business state, transactions, authenticatio
 
 Trade-off:
 More operational complexity because there are multiple services.
+
+---
+
+Problem:
+Why are environment variables used for database configuration instead of hardcoding credentials in properties?
+
+Decision:
+All Neon PostgreSQL configuration and secrets are supplied via `.env`.
+
+Reason:
+It is a fundamental security practice to keep secrets out of version control and the codebase. By requiring a local `.env` (ignored by Git) and tracking only `.env.example`, we prevent credential leakage and ensure that switching environments (e.g., local to production) doesn't require modifying source code.

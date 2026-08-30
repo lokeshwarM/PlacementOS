@@ -9,7 +9,7 @@ Support thousands of students.
 - **Spring Boot**: Handles business requests, domain state, and transactions. Can scale horizontally.
 - **Python/FastAPI Workers**: Handle heavy document processing (PDF, Excel, AI) and can scale independently of the core business logic.
 - **Redis**: Provides asynchronous decoupling and robust queue management.
-- **PostgreSQL**: Remains the persistent system of record.
+- **PostgreSQL**: Hosted on Neon PostgreSQL, which handles underlying database scaling, connection pooling and storage. Remains the persistent system of record.
 - Future horizontal scaling should not require changing business ownership between services.
 
 ## Future Scaling
