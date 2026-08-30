@@ -12,8 +12,7 @@ import java.time.Instant;
  *
  * Tracks personalised notifications dispatched to students.
  * Idempotency at the database level is handled by a unique constraint on
- * (student_id, placement_drive_id, notification_type, channel) if needed,
- * but that is enforced at the application layer per the V1 schema comments.
+ * (student_id, placement_drive_id, notification_type, channel).
  *
  * FK: student_id         → students(id)          (required, no cascade)
  * FK: placement_drive_id → placement_drives(id)  (required, no cascade)
@@ -21,7 +20,9 @@ import java.time.Instant;
  * No notification delivery logic is implemented here.
  */
 @Entity
-@Table(name = "notifications")
+@Table(name = "notifications", uniqueConstraints = {
+    @UniqueConstraint(name = "uq_notifications_idempotency", columnNames = {"student_id", "placement_drive_id", "notification_type", "channel"})
+})
 public class Notification {
 
     @Id
