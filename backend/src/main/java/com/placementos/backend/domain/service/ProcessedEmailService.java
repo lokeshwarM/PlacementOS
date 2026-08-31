@@ -87,6 +87,33 @@ public class ProcessedEmailService {
     }
 
     /**
+     * Marks an email as successfully retrieved and stored in PostgreSQL.
+     */
+    @Transactional
+    public void markRetrieved(String messageId) {
+        ProcessedEmail entry = processedEmailRepository.findByMessageId(messageId)
+                .orElseThrow(() -> new IllegalStateException("Cannot mark retrieved: message ID not found - " + messageId));
+        entry.setProcessingStatus(EmailProcessingStatus.RETRIEVED);
+        processedEmailRepository.save(entry);
+    }
+
+    /**
+     * Marks an existing discovered/queued email as failed.
+     */
+    @Transactional
+    public void markFailed(String messageId, String errorMessage) {
+        Optional<ProcessedEmail> existing = processedEmailRepository.findByMessageId(messageId);
+        if (existing.isPresent()) {
+            ProcessedEmail entry = existing.get();
+            entry.setProcessingStatus(EmailProcessingStatus.FAILED);
+            entry.setErrorMessage(errorMessage);
+            processedEmailRepository.save(entry);
+        } else {
+            registerFailed(messageId, null, null, Instant.now(), errorMessage);
+        }
+    }
+
+    /**
      * Registers a successfully processed Gmail message.
      * Throws {@link DuplicateResourceException} if the message ID already exists,
      * which indicates a race condition or logic error.

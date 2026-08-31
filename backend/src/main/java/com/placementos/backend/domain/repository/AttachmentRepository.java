@@ -12,5 +12,7 @@ public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
 
     List<Attachment> findByPlacementDriveId(Long placementDriveId);
 
+    List<Attachment> findByGmailMessageId(Long gmailMessageId);
+
     List<Attachment> findByParsedStatus(AttachmentParsedStatus parsedStatus);
 }

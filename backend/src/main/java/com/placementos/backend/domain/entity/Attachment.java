@@ -22,12 +22,24 @@ public class Attachment {
     private Long id;
 
     /**
-     * FK to placement_drives. LAZY to avoid loading the entire drive on attachment lookup.
-     * No cascade: deleting a drive should not silently delete attachment records.
+     * Optional FK to placement_drives.
      */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "placement_drive_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "placement_drive_id")
     private PlacementDrive placementDrive;
+
+    /**
+     * Optional FK to gmail_messages.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gmail_message_record_id")
+    private GmailMessage gmailMessage;
+
+    @Column(name = "attachment_id", length = 255)
+    private String attachmentId;
+
+    @Column(name = "byte_size")
+    private Long byteSize;
 
     @Column(name = "filename", nullable = false, length = 500)
     private String filename;
@@ -71,6 +83,15 @@ public class Attachment {
 
     public PlacementDrive getPlacementDrive() { return placementDrive; }
     public void setPlacementDrive(PlacementDrive placementDrive) { this.placementDrive = placementDrive; }
+
+    public GmailMessage getGmailMessage() { return gmailMessage; }
+    public void setGmailMessage(GmailMessage gmailMessage) { this.gmailMessage = gmailMessage; }
+
+    public String getAttachmentId() { return attachmentId; }
+    public void setAttachmentId(String attachmentId) { this.attachmentId = attachmentId; }
+
+    public Long getByteSize() { return byteSize; }
+    public void setByteSize(Long byteSize) { this.byteSize = byteSize; }
 
     public String getFilename() { return filename; }
     public void setFilename(String filename) { this.filename = filename; }

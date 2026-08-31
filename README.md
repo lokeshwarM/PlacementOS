@@ -10,9 +10,9 @@ PlacementOS is an event-driven placement workflow platform that automatically pr
 
 PlacementOS uses a distributed architecture designed for scalability and clear separation of concerns:
 - **Spring Boot**: Core business platform, managing student state, placements, and eligibility logic.
-- **Python (FastAPI)**: Independent service dedicated to parsing Excel, PDF, and DOCX files, along with AI-assisted text extraction.
+- **Python (FastAPI)**: Independent service dedicated to parsing Excel, PDF, and DOCX files, along with AI-assisted text extraction (deferred to future milestone).
 - **PostgreSQL**: System of record (Hosted on Neon PostgreSQL).
-- **Redis**: Message broker and async task queue.
+- **Redis Streams**: Message broker and durable async stream queue.
 - **Next.js**: Frontend application.
 
 *(Note: Docker and infrastructure containerization are intentionally deferred to a later milestone.)*
@@ -34,22 +34,11 @@ To run the application locally, you must provide your own Neon PostgreSQL and Re
 - **Persistence owner**: Spring Boot exclusively — Python never writes directly to business tables
 - **Hibernate**: Configured with `ddl-auto=validate` — validates schema only, never mutates it
 
-Status:
+## Pipeline Features
 
-Security Foundation Phase Completed.
-Redis Asynchronous Foundation Completed.
-
-Features:
-- Persistence Layer (Spring Data JPA) with Schema Validation
-- Service Layer (DTO mapping, Business Logic, Exception Definitions)
-- REST API Layer (`/api/v1/`) with Global Exception Handling
-- Standalone MockMVC Unit Tests (33 passing tests)
-- Spring Security Foundation (Stateless Sessions, CSRF disabled, Strict CORS)
-- Redis Asynchronous Event/Job Foundation (Event Envelopes, JSON Serialization)
-- OpenAPI/Swagger is intentionally deferred 
- ## Gmail Source Identity
-
-Gmail source authentication is separate from student authentication. The current scope is `gmail.readonly`. OAuth authorization uses the authorization-code flow. OAuth state protects the callback. Source mailbox credentials are not business data.
-- **Refresh tokens** are encrypted at rest using AES-256-GCM before being stored in the database.
-- **Access tokens** are transient and held in memory only.
-- Encryption keys are externalized (e.g. `GMAIL_TOKEN_ENCRYPTION_KEY`) and never stored in the database.
+- **Gmail Integration**: OAuth 2.0 (`gmail.readonly`) with AES-256-GCM encrypted refresh token storage.
+- **Pub/Sub Webhook**: Google-signed JWT authenticated push endpoint for mailbox synchronization.
+- **History Synchronization**: Synchronous Gmail History API pagination and discovery idempotency.
+- **Redis Streams Event Foundation**: Durable `GMAIL_MESSAGE_DISCOVERED` events published to `placementos:events:stream` with consumer groups.
+- **Message Retrieval & MIME Normalization**: Recursively extracts plain text, HTML, and attachment metadata from Gmail messages without loading heavy binaries.
+- **Durable Persistence**: `gmail_messages` and evolved `attachments` metadata records stored in PostgreSQL.

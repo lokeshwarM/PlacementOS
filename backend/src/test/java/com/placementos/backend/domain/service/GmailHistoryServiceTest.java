@@ -5,8 +5,6 @@ import com.google.api.services.gmail.model.History;
 import com.google.api.services.gmail.model.HistoryMessageAdded;
 import com.google.api.services.gmail.model.ListHistoryResponse;
 import com.google.api.services.gmail.model.Message;
-import com.placementos.backend.domain.event.EventEnvelope;
-import com.placementos.backend.domain.event.EventType;
 import com.placementos.backend.domain.model.GmailSource;
 import com.placementos.backend.domain.repository.GmailSourceRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +13,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.connection.stream.MapRecord;
+import org.springframework.data.redis.connection.stream.Record;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StreamOperations;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -43,6 +45,9 @@ public class GmailHistoryServiceTest {
     private RedisTemplate<String, Object> redisTemplate;
 
     @Mock
+    private StreamOperations<String, Object, Object> streamOps;
+
+    @Mock
     private Gmail gmailClient;
 
     @Mock
@@ -54,14 +59,16 @@ public class GmailHistoryServiceTest {
     @Mock
     private Gmail.Users.History.List historyListRequest;
 
+    private ObjectMapper objectMapper;
     private GmailHistoryService gmailHistoryService;
 
     private static final String EMAIL = "cdc@example.com";
 
     @BeforeEach
     void setUp() {
+        objectMapper = new ObjectMapper();
         gmailHistoryService = new GmailHistoryService(
-                sourceRepository, oauthService, processedEmailService, redisTemplate);
+                sourceRepository, oauthService, processedEmailService, redisTemplate, objectMapper);
     }
 
     @Test
@@ -86,7 +93,7 @@ public class GmailHistoryServiceTest {
     }
 
     @Test
-    void syncHistory_success_paginatesAndPublishesAndAdvancesCursor() throws Exception {
+    void syncHistory_success_paginatesAndPublishesToStreamAndAdvancesCursor() throws Exception {
         GmailSource source = new GmailSource();
         source.setEmailAddress(EMAIL);
         source.setLastHistoryId("1000");
@@ -98,7 +105,9 @@ public class GmailHistoryServiceTest {
         when(historyEndpoint.list("me")).thenReturn(historyListRequest);
         when(historyListRequest.setStartHistoryId(new BigInteger("1000"))).thenReturn(historyListRequest);
         when(historyListRequest.setHistoryTypes(List.of("messageAdded"))).thenReturn(historyListRequest);
-        when(historyListRequest.setPageToken(any())).thenReturn(historyListRequest); // For page 2
+        when(historyListRequest.setPageToken(any())).thenReturn(historyListRequest);
+
+        when(redisTemplate.opsForStream()).thenReturn(streamOps);
 
         // Page 1
         Message msg1 = new Message().setId("msg1").setThreadId("thread1");
@@ -133,10 +142,10 @@ public class GmailHistoryServiceTest {
         // Execute
         gmailHistoryService.syncHistory(EMAIL);
 
-        // Verify publication only for msg1
-        ArgumentCaptor<EventEnvelope> eventCaptor = ArgumentCaptor.forClass(EventEnvelope.class);
-        verify(redisTemplate, times(1)).convertAndSend(eq("placementos.events"), eventCaptor.capture());
-        assertEquals(EventType.GMAIL_MESSAGE_DISCOVERED, eventCaptor.getValue().getEventType());
+        // Verify Stream publication only for msg1
+        ArgumentCaptor<MapRecord> recordCaptor = ArgumentCaptor.forClass(MapRecord.class);
+        verify(streamOps, times(1)).add(recordCaptor.capture());
+        assertEquals(GmailHistoryService.REDIS_STREAM_KEY, recordCaptor.getValue().getStream());
 
         // Verify markQueued only for msg1
         verify(processedEmailService).markQueued("msg1");

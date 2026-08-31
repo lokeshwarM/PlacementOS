@@ -82,3 +82,10 @@ Google Cloud Pub/Sub pushes Gmail notifications to a dedicated webhook (`/api/in
   - `email_verified` must be true.
   - Expiry is enforced.
 - **This is distinct from the OAuth token flow** and distinct from Spring Security role checks. The endpoint strictly rejects any push that fails JWT verification.
+
+## Email Content Privacy & Sensitive Data
+
+- **Content Protection**: Email bodies (`plain_text_body`, `html_body`) and attachment contents can contain sensitive student data, proprietary job descriptions, and salary info.
+- **Operational Logging Rule**: Raw email bodies, HTML, and attachment binaries are **NEVER logged** to application logs or console output.
+- **HTML Security**: Stored HTML bodies are treated as raw data only. They must never be rendered blindly in administrative or frontend views without sanitization to prevent Cross-Site Scripting (XSS).
+- **Binary Data Boundary**: Large binary files are never stored in PostgreSQL or passed across Redis Streams. Only file metadata (filename, content type, attachmentId, size) is recorded in PostgreSQL.

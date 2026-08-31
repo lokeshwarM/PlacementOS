@@ -28,6 +28,12 @@ students
   |
   +---- reminder_tasks ---- placement_drives
 
+gmail_sources
+  |
+  +---- gmail_messages
+          |
+          +---- attachments (can link to gmail_messages or placement_drives)
+
 placement_drives
   |
   +---- attachments
@@ -50,7 +56,7 @@ Stores registered Gmail accounts (CDC inboxes) and their access credentials for 
 | email_address      | VARCHAR(255) | UNIQUE, NOT NULL                           |
 | provider           | VARCHAR(50)  | NOT NULL                                   |
 | credential         | TEXT         | AES-256-GCM encrypted refresh token        |
-| status             | VARCHAR(50)  | ACTIVE / ERROR                             |
+| status             | VARCHAR(50)  | ACTIVE / ERROR / HISTORY_STALE             |
 | last_history_id    | VARCHAR(255) | Opaque cursor string for History API       |
 | watch_expiration   | TIMESTAMPTZ  | When the current Pub/Sub watch expires     |
 | watch_status       | VARCHAR(50)  | NONE / ACTIVE / EXPIRED                    |
@@ -58,6 +64,32 @@ Stores registered Gmail accounts (CDC inboxes) and their access credentials for 
 | updated_at         | TIMESTAMPTZ  | UTC, NOT NULL                              |
 
 Indexes: `email_address`
+
+---
+
+### gmail_messages
+Stores acquired and normalized raw Gmail message payloads and metadata.
+
+| Field               | Type         | Notes                                             |
+|---------------------|--------------|---------------------------------------------------|
+| id                  | BIGSERIAL    | Primary Key                                       |
+| message_id          | VARCHAR(255) | Gmail Message-ID, NOT NULL                        |
+| gmail_source_id     | BIGINT       | FK → gmail_sources(id), NOT NULL                  |
+| thread_id           | VARCHAR(255) | Nullable                                          |
+| subject             | VARCHAR(500) | Extracted Subject header                          |
+| sender              | VARCHAR(255) | Extracted From header                             |
+| recipients          | TEXT         | Extracted To and Cc headers                       |
+| plain_text_body     | TEXT         | Extracted plain text body                         |
+| html_body           | TEXT         | Extracted HTML body                               |
+| snippet             | TEXT         | Short message snippet                             |
+| gmail_internal_date | TIMESTAMPTZ  | Internal Gmail timestamp                          |
+| retrieval_status    | VARCHAR(50)  | RETRIEVED / FAILED                                |
+| retrieved_at        | TIMESTAMPTZ  | UTC, NOT NULL                                     |
+| created_at          | TIMESTAMPTZ  | UTC, NOT NULL                                     |
+| updated_at          | TIMESTAMPTZ  | UTC, NOT NULL                                     |
+
+Unique constraint: `(gmail_source_id, message_id)`
+Indexes: `message_id`, `gmail_source_id`, `thread_id`
 
 ---
 
@@ -105,16 +137,16 @@ Indexes: `company_name`, `application_deadline`, `status`
 ### processed_emails
 Idempotency guard for Gmail ingestion. Prevents the same email being processed more than once.
 
-| Field              | Type         | Notes                                     |
-|--------------------|--------------|-------------------------------------------|
-| id                 | BIGSERIAL    | Primary Key                               |
-| message_id         | VARCHAR(255) | **UNIQUE** Gmail Message-ID (globally unique) |
-| thread_id          | VARCHAR(255) | Nullable                                  |
-| source_identifier  | VARCHAR(255) | Nullable — inbox identifier               |
-| received_at        | TIMESTAMPTZ  | Nullable                                  |
-| processed_at       | TIMESTAMPTZ  | UTC, NOT NULL                             |
-| processing_status  | VARCHAR(50)  | PENDING / PROCESSED / FAILED / DUPLICATE  |
-| error_message      | TEXT         | Nullable — failure details                |
+| Field              | Type         | Notes                                                              |
+|--------------------|--------------|--------------------------------------------------------------------|
+| id                 | BIGSERIAL    | Primary Key                                                        |
+| message_id         | VARCHAR(255) | **UNIQUE** Gmail Message-ID (globally unique)                      |
+| thread_id          | VARCHAR(255) | Nullable                                                           |
+| source_identifier  | VARCHAR(255) | Nullable — inbox identifier                                        |
+| received_at        | TIMESTAMPTZ  | Nullable                                                           |
+| processed_at       | TIMESTAMPTZ  | UTC, NOT NULL                                                      |
+| processing_status  | VARCHAR(50)  | PENDING / DISCOVERED / QUEUED / RETRIEVED / PROCESSED / FAILED / DUPLICATE |
+| error_message      | TEXT         | Nullable — failure details                                         |
 
 Indexes: `message_id`
 
@@ -123,17 +155,21 @@ Indexes: `message_id`
 ### attachments
 Tracks files from placement emails. Binary content is NOT stored in the database.
 
-| Field              | Type         | Notes                                |
-|--------------------|--------------|--------------------------------------|
-| id                 | BIGSERIAL    | Primary Key                          |
-| placement_drive_id | BIGINT       | FK → placement_drives                |
-| filename           | VARCHAR(500) | NOT NULL                             |
-| content_type       | VARCHAR(100) | MIME type, nullable                  |
-| storage_reference  | TEXT         | Path or object-store reference       |
-| parsed_status      | VARCHAR(50)  | PENDING / PARSED / FAILED / SKIPPED  |
-| created_at         | TIMESTAMPTZ  | UTC, NOT NULL                        |
+| Field                    | Type         | Notes                                                    |
+|--------------------------|--------------|----------------------------------------------------------|
+| id                       | BIGSERIAL    | Primary Key                                              |
+| placement_drive_id       | BIGINT       | FK → placement_drives, nullable                          |
+| gmail_message_record_id  | BIGINT       | FK → gmail_messages(id), nullable                        |
+| attachment_id            | VARCHAR(255) | Gmail API attachmentId, nullable                         |
+| byte_size                | BIGINT       | File size in bytes, nullable                             |
+| filename                 | VARCHAR(500) | NOT NULL                                                 |
+| content_type             | VARCHAR(100) | MIME type, nullable                                      |
+| storage_reference        | TEXT         | Path or object-store reference                           |
+| parsed_status            | VARCHAR(50)  | PENDING / PARSED / FAILED / SKIPPED                      |
+| created_at               | TIMESTAMPTZ  | UTC, NOT NULL                                            |
 
-Indexes: `placement_drive_id`
+Check constraint: `placement_drive_id IS NOT NULL OR gmail_message_record_id IS NOT NULL`
+Indexes: `placement_drive_id`, `gmail_message_record_id`
 
 ---
 

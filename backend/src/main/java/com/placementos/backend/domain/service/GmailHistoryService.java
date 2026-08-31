@@ -12,8 +12,10 @@ import com.placementos.backend.domain.model.GmailSource;
 import com.placementos.backend.domain.repository.GmailSourceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.connection.stream.StreamRecords;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -30,21 +32,25 @@ import java.util.Optional;
 public class GmailHistoryService {
 
     private static final Logger log = LoggerFactory.getLogger(GmailHistoryService.class);
-    private static final String REDIS_EVENTS_TOPIC = "placementos.events";
+    public static final String REDIS_STREAM_KEY = "placementos:events:stream";
+    public static final String REDIS_CONSUMER_GROUP = "placementos-backend-group";
 
     private final GmailSourceRepository sourceRepository;
     private final GmailOAuthService oauthService;
     private final ProcessedEmailService processedEmailService;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     public GmailHistoryService(GmailSourceRepository sourceRepository,
                                GmailOAuthService oauthService,
                                ProcessedEmailService processedEmailService,
-                               RedisTemplate<String, Object> redisTemplate) {
+                               RedisTemplate<String, Object> redisTemplate,
+                               ObjectMapper objectMapper) {
         this.sourceRepository = sourceRepository;
         this.oauthService = oauthService;
         this.processedEmailService = processedEmailService;
         this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -145,17 +151,26 @@ public class GmailHistoryService {
             return false;
         }
         
-        // 2. Publish to Redis (Outside of DB transaction for safety)
+        // 2. Publish to Redis Stream (Outside of DB transaction for safety)
         GmailMessageDiscoveredPayload payload = new GmailMessageDiscoveredPayload(msgId, threadId, sourceEmail);
         EventEnvelope<GmailMessageDiscoveredPayload> event = new EventEnvelope<>(
                 EventType.GMAIL_MESSAGE_DISCOVERED, "gmail-history-service", payload);
-                
+
         try {
-            redisTemplate.convertAndSend(REDIS_EVENTS_TOPIC, event);
-            log.debug("Published GMAIL_MESSAGE_DISCOVERED for message {}", msgId);
+            java.util.Map<String, String> streamRecord = new java.util.HashMap<>();
+            streamRecord.put("eventType", event.getEventType().name());
+            streamRecord.put("eventId", event.getEventId());
+            streamRecord.put("timestamp", event.getTimestamp());
+            streamRecord.put("source", event.getSource());
+            streamRecord.put("payload", objectMapper.writeValueAsString(payload));
+
+            redisTemplate.opsForStream().add(
+                    StreamRecords.newRecord().in(REDIS_STREAM_KEY).ofMap(streamRecord)
+            );
+            log.debug("Published GMAIL_MESSAGE_DISCOVERED to stream {} for message {}", REDIS_STREAM_KEY, msgId);
         } catch (Exception e) {
-            log.error("Failed to publish message {} to Redis. State remains DISCOVERED.", msgId, e);
-            throw new RuntimeException("Redis publication failed", e);
+            log.error("Failed to publish message {} to Redis Stream. State remains DISCOVERED.", msgId, e);
+            throw new RuntimeException("Redis Stream publication failed", e);
         }
 
         // 3. Transaction 2: Mark successfully queued
