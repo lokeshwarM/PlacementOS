@@ -121,7 +121,7 @@ public class PubSubPushController {
                 notificationHandler.handle(emailAddress, historyId);
 
         return switch (result) {
-            case CURSOR_ADVANCED, ALREADY_SEEN ->
+            case SYNC_SUCCESS, ALREADY_SEEN ->
                     // Both are safe outcomes: acknowledge so Pub/Sub stops redelivering
                     ResponseEntity.noContent().build();
             case SOURCE_NOT_FOUND ->

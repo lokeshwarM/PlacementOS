@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Optional;
 
+import org.springframework.dao.DataIntegrityViolationException;
+
 /**
  * Business service for Gmail ingestion idempotency.
  *
@@ -40,6 +42,48 @@ public class ProcessedEmailService {
      */
     public boolean isDuplicate(String messageId) {
         return processedEmailRepository.existsByMessageId(messageId);
+    }
+
+    /**
+     * Idempotently acquires the right to process a newly discovered message.
+     * Returns true if the caller should proceed to publish the event to Redis.
+     * Returns false if the message has already been successfully queued or processed.
+     */
+    @Transactional
+    public boolean tryAcquireDiscovery(String messageId, String threadId, String sourceIdentifier, Instant receivedAt) {
+        Optional<ProcessedEmail> existing = processedEmailRepository.findByMessageId(messageId);
+        if (existing.isPresent()) {
+            // If it is DISCOVERED, a previous attempt failed before publishing to Redis.
+            // We return true to allow the retry. Any other state (QUEUED, PROCESSED) means
+            // we already handed it off successfully.
+            return existing.get().getProcessingStatus() == EmailProcessingStatus.DISCOVERED;
+        }
+
+        ProcessedEmail entry = new ProcessedEmail();
+        entry.setMessageId(messageId);
+        entry.setThreadId(threadId);
+        entry.setSourceIdentifier(sourceIdentifier);
+        entry.setReceivedAt(receivedAt);
+        entry.setProcessingStatus(EmailProcessingStatus.DISCOVERED);
+
+        try {
+            processedEmailRepository.saveAndFlush(entry);
+            return true;
+        } catch (DataIntegrityViolationException e) {
+            // Concurrent ingestion race condition: another thread inserted it first.
+            return false;
+        }
+    }
+
+    /**
+     * Marks an email as successfully queued to Redis.
+     */
+    @Transactional
+    public void markQueued(String messageId) {
+        ProcessedEmail entry = processedEmailRepository.findByMessageId(messageId)
+                .orElseThrow(() -> new IllegalStateException("Cannot mark queued: message ID not found - " + messageId));
+        entry.setProcessingStatus(EmailProcessingStatus.QUEUED);
+        processedEmailRepository.save(entry);
     }
 
     /**

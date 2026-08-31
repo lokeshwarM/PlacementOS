@@ -8,5 +8,11 @@ public enum EventType {
      * been advanced. This event type is reserved for the future History API
      * synchronization milestone. It is NOT published in the current milestone.
      */
-    GMAIL_MAILBOX_CHANGED
+    GMAIL_MAILBOX_CHANGED,
+    
+    /**
+     * Signals that a new incoming placement email has been discovered via the Gmail History API.
+     * Sent to Redis to queue the email for processing.
+     */
+    GMAIL_MESSAGE_DISCOVERED
 }

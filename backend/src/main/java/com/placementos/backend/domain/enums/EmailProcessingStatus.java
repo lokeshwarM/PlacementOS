@@ -6,6 +6,8 @@ package com.placementos.backend.domain.enums;
  */
 public enum EmailProcessingStatus {
     PENDING,
+    DISCOVERED,
+    QUEUED,
     PROCESSED,
     FAILED,
     DUPLICATE

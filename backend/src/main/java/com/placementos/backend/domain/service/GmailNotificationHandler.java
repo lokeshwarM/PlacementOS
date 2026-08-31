@@ -52,14 +52,17 @@ import java.util.Optional;
 public class GmailNotificationHandler {
 
     private final GmailSourceRepository gmailSourceRepository;
+    private final GmailHistoryService gmailHistoryService;
 
-    public GmailNotificationHandler(GmailSourceRepository gmailSourceRepository) {
+    public GmailNotificationHandler(GmailSourceRepository gmailSourceRepository,
+                                    GmailHistoryService gmailHistoryService) {
         this.gmailSourceRepository = gmailSourceRepository;
+        this.gmailHistoryService = gmailHistoryService;
     }
 
     public enum HandlerResult {
-        /** Cursor advanced successfully — the incoming historyId was newer than the stored one. */
-        CURSOR_ADVANCED,
+        /** Synchronized successfully. */
+        SYNC_SUCCESS,
         /** Incoming historyId was not newer than the stored cursor — no-op, safe to acknowledge. */
         ALREADY_SEEN,
         /** No GmailSource is registered for the email address in the notification. */
@@ -92,12 +95,12 @@ public class GmailNotificationHandler {
             return HandlerResult.ALREADY_SEEN;
         }
 
-        // Advance the cursor. This does NOT mean messages have been processed.
-        // The next milestone will use this cursor as startHistoryId for History API calls.
-        source.setLastHistoryId(incomingHistoryId);
-        gmailSourceRepository.save(source);
+        // Synchronously invoke history API to discover messages and publish to Redis.
+        // The durable cursor is advanced inside the syncHistory method ONLY after
+        // successful discovery and queueing.
+        gmailHistoryService.syncHistory(emailAddress);
 
-        return HandlerResult.CURSOR_ADVANCED;
+        return HandlerResult.SYNC_SUCCESS;
     }
 
     /**

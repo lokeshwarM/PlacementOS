@@ -125,7 +125,7 @@ public class PubSubAuthenticationTest {
     public void push_validJwt_validEnvelope_returns204() throws Exception {
         when(jwtValidator.isValid("valid.jwt.token")).thenReturn(true);
         when(notificationHandler.handle("cdc@example.com", "99999"))
-                .thenReturn(GmailNotificationHandler.HandlerResult.CURSOR_ADVANCED);
+                .thenReturn(GmailNotificationHandler.HandlerResult.SYNC_SUCCESS);
 
         mockMvc.perform(post("/api/internal/gmail/pubsub/push")
                 .header("Authorization", "Bearer valid.jwt.token")
