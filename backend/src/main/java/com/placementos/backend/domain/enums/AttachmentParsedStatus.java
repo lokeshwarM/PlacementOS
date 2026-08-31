@@ -6,7 +6,12 @@ package com.placementos.backend.domain.enums;
  */
 public enum AttachmentParsedStatus {
     PENDING,
+    DOWNLOADED,
+    PROCESSING,
+    EXTRACTED,
     PARSED,
     FAILED,
+    OCR_REQUIRED,
+    REVIEW_REQUIRED,
     SKIPPED
 }

@@ -52,5 +52,9 @@ OpenAPI documentation (Swagger UI) is **intentionally deferred** as per mileston
 ## Processing & Extraction APIs (Internal)
 - `POST /api/v1/internal/extraction/result` - Callback for Python processing service to submit structured extraction results to Spring Boot.
 - `GET /api/v1/internal/messages/{messageId}` - Endpoint for Python worker to retrieve normalized email text and metadata.
+- `GET /api/v1/internal/attachments/{id}/content` - Protected internal endpoint for Python worker to download attachment binary bytes (authenticated via `X-Internal-Service-Key`).
+- `POST /api/v1/internal/shortlists/result` - Callback for Python worker to submit structured shortlist extraction candidates.
+- `POST /api/v1/internal/attachments/{id}/process` - Development trigger to fetch and store attachment binary from Gmail API.
+- `GET /api/v1/internal/shortlists/unresolved` - Endpoint to inspect ambiguous and review-required candidate records.
 - `POST /api/internal/gmail/messages/retrieve` - Development trigger to fetch and persist raw Gmail message.
 - `POST /api/internal/gmail/history/sync` - Development trigger for History API synchronization.

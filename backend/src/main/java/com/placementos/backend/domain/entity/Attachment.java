@@ -50,6 +50,9 @@ public class Attachment {
     @Column(name = "storage_reference", columnDefinition = "TEXT")
     private String storageReference;
 
+    @Column(name = "sha256_checksum", length = 64)
+    private String sha256Checksum;
+
     /**
      * Parse status. Stored as VARCHAR(50) with CHECK constraint.
      * @see AttachmentParsedStatus for valid values.
@@ -101,6 +104,9 @@ public class Attachment {
 
     public String getStorageReference() { return storageReference; }
     public void setStorageReference(String storageReference) { this.storageReference = storageReference; }
+
+    public String getSha256Checksum() { return sha256Checksum; }
+    public void setSha256Checksum(String sha256Checksum) { this.sha256Checksum = sha256Checksum; }
 
     public AttachmentParsedStatus getParsedStatus() { return parsedStatus; }
     public void setParsedStatus(AttachmentParsedStatus parsedStatus) { this.parsedStatus = parsedStatus; }

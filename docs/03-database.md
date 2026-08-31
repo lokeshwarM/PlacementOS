@@ -204,42 +204,49 @@ Indexes: `message_id`
 ---
 
 ### attachments
-Tracks files from placement emails. Binary content is NOT stored in the database.
+Tracks files from placement emails. Binary content is NOT stored in the database; `storage_reference` points to secure file/object storage managed via `AttachmentStorage`.
 
-| Field                    | Type         | Notes                                                    |
-|--------------------------|--------------|----------------------------------------------------------|
-| id                       | BIGSERIAL    | Primary Key                                              |
-| placement_drive_id       | BIGINT       | FK → placement_drives, nullable                          |
-| gmail_message_record_id  | BIGINT       | FK → gmail_messages(id), nullable                        |
-| attachment_id            | VARCHAR(255) | Gmail API attachmentId, nullable                         |
-| byte_size                | BIGINT       | File size in bytes, nullable                             |
-| filename                 | VARCHAR(500) | NOT NULL                                                 |
-| content_type             | VARCHAR(100) | MIME type, nullable                                      |
-| storage_reference        | TEXT         | Path or object-store reference                           |
-| parsed_status            | VARCHAR(50)  | PENDING / PARSED / FAILED / SKIPPED                      |
-| created_at               | TIMESTAMPTZ  | UTC, NOT NULL                                            |
+| Field                    | Type         | Notes                                                              |
+|--------------------------|--------------|--------------------------------------------------------------------|
+| id                       | BIGSERIAL    | Primary Key                                                        |
+| placement_drive_id       | BIGINT       | FK → placement_drives, nullable                                    |
+| gmail_message_record_id  | BIGINT       | FK → gmail_messages(id), nullable                                  |
+| attachment_id            | VARCHAR(255) | Gmail API attachmentId, nullable                                   |
+| byte_size                | BIGINT       | File size in bytes, nullable                                       |
+| filename                 | VARCHAR(500) | NOT NULL                                                           |
+| content_type             | VARCHAR(100) | MIME type, nullable                                                |
+| storage_reference        | TEXT         | Storage reference key                                              |
+| sha256_checksum          | VARCHAR(64)  | SHA-256 integrity checksum, nullable                               |
+| parsed_status            | VARCHAR(50)  | PENDING / DOWNLOADED / PROCESSING / EXTRACTED / PARSED / FAILED / OCR_REQUIRED / REVIEW_REQUIRED / SKIPPED |
+| created_at               | TIMESTAMPTZ  | UTC, NOT NULL                                                      |
 
 Check constraint: `placement_drive_id IS NOT NULL OR gmail_message_record_id IS NOT NULL`
-Indexes: `placement_drive_id`, `gmail_message_record_id`
+Indexes: `placement_drive_id`, `gmail_message_record_id`, `sha256_checksum`
 
 ---
 
 ### shortlist_entries
-Represents a candidate found in a shortlist document. At least one of `registration_number`, `neopat_id`, or `candidate_name` is expected.
+Represents a candidate found in a shortlist document and deterministically matched to a registered student.
 
-| Field               | Type          | Notes                               |
-|---------------------|---------------|-------------------------------------|
-| id                  | BIGSERIAL     | Primary Key                         |
-| placement_drive_id  | BIGINT        | FK → placement_drives               |
-| registration_number | VARCHAR(20)   | Nullable                            |
-| neopat_id           | VARCHAR(20)   | Nullable                            |
-| candidate_name      | VARCHAR(255)  | Nullable                            |
-| source_attachment_id| BIGINT        | FK → attachments, nullable          |
-| match_method        | VARCHAR(50)   | How the candidate was identified    |
-| confidence          | NUMERIC(5,4)  | 0.0000–1.0000                       |
-| created_at          | TIMESTAMPTZ   | UTC, NOT NULL                       |
+| Field                | Type          | Notes                                                 |
+|----------------------|---------------|-------------------------------------------------------|
+| id                   | BIGSERIAL     | Primary Key                                           |
+| placement_drive_id   | BIGINT        | FK → placement_drives, NOT NULL                       |
+| student_id           | BIGINT        | FK → students, nullable (matched student)             |
+| placement_role_id    | BIGINT        | FK → placement_roles, nullable (role association)     |
+| registration_number  | VARCHAR(20)   | Cleaned registration number, nullable                 |
+| neopat_id            | VARCHAR(20)   | Cleaned NeoPAT ID, nullable                           |
+| candidate_name       | VARCHAR(255)  | Candidate name, nullable                              |
+| source_attachment_id | BIGINT        | FK → attachments, nullable                            |
+| match_status         | VARCHAR(50)   | UNMATCHED / MATCHED / AMBIGUOUS / REVIEW_REQUIRED     |
+| match_method         | VARCHAR(50)   | REGISTRATION_NUMBER / NEOPAT_ID / EXACT_NORMALIZED_NAME |
+| match_reason         | TEXT          | Explainable match reason or conflict explanation      |
+| raw_evidence         | TEXT          | Document snippet evidence                             |
+| confidence           | NUMERIC(5,4)  | 0.0000–1.0000                                         |
+| created_at           | TIMESTAMPTZ   | UTC, NOT NULL                                         |
+| updated_at           | TIMESTAMPTZ   | UTC, NOT NULL                                         |
 
-Indexes: `placement_drive_id`, `registration_number`, `neopat_id`, `candidate_name`
+Indexes: `placement_drive_id`, `student_id`, `placement_role_id`, `match_status`, `source_attachment_id`, `registration_number`, `neopat_id`, `candidate_name`
 
 ---
 

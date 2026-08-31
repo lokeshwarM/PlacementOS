@@ -25,5 +25,10 @@ public enum EventType {
     /**
      * Signals that a placement email has been classified and its structured information extracted.
      */
-    PLACEMENT_EXTRACTED
+    PLACEMENT_EXTRACTED,
+
+    /**
+     * Signals that an attachment binary has been downloaded, securely stored, and is ready for document processing.
+     */
+    ATTACHMENT_READY_FOR_PROCESSING
 }

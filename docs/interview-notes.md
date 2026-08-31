@@ -250,3 +250,31 @@ Why persist eligibility results?
 
 **Answer:**
 They will be reused by notifications, dashboards and application workflows, and persistence provides an auditable current decision.
+
+---
+
+### Attachment Processing & Shortlist Matching
+
+**Question:**
+Why not store attachment binaries in PostgreSQL?
+
+**Answer:**
+PostgreSQL stores durable business metadata well, while object/file storage is more appropriate for potentially large binary documents.
+
+**Question:**
+Why is document parsing in Python but student matching in Spring Boot?
+
+**Answer:**
+Python handles unstructured document processing, while Spring Boot owns trusted student identity and business state.
+
+**Question:**
+Why prioritize registration number and NeoPAT over names?
+
+**Answer:**
+Institutional identifiers are more reliable than names for identity matching.
+
+**Question:**
+How do you prevent incorrect name-based shortlist matches?
+
+**Answer:**
+Use exact normalized matching only when unique; ambiguous or weak matches become review-required rather than automatically linking to a student.

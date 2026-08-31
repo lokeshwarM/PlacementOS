@@ -58,6 +58,15 @@ Student-Level Eligibility Engine (`EligibilityEvaluationEngine` & `EligibilitySe
 
 ↓
 
+Attachment Acquisition & Document Processing:
+  1. `GmailAttachmentService` downloads attachment binary via Gmail API
+  2. `AttachmentStorage` securely stores binary (isolated from PostgreSQL) and emits `ATTACHMENT_READY_FOR_PROCESSING`
+  3. Python worker consumes event, downloads binary via protected internal endpoint, classifies document, and parses Excel/PDF/DOCX into structured candidate records
+  4. Python posts structured candidate list to Spring Boot `POST /api/v1/internal/shortlists/result`
+  5. `ShortlistMatchingService` matches candidates to students using strict identifier hierarchy (Reg No -> NeoPAT ID -> Unique Exact Name), flags conflicts/duplicates as `AMBIGUOUS`, and idempotently records `ShortlistEntry`
+
+↓
+
 Notification Queue (Redis — Future Milestone)
 
 ↓

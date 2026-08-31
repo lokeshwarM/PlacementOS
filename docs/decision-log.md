@@ -407,3 +407,63 @@ Version eligibility evaluator behavior using a simple evaluator version identifi
 Future rule-engine changes may change outcomes and should remain traceable.
 ### Trade-off
 Results must retain which evaluator version produced them.
+
+---
+
+## D-049
+### Decision
+Store attachment binaries through an abstraction rather than directly in PostgreSQL.
+### Reason
+Large document binaries should use storage designed for object/file persistence while PostgreSQL retains metadata and references.
+### Trade-off
+Introduces a storage layer and retention management.
+
+---
+
+## D-050
+### Decision
+Keep document parsing in Python while keeping student matching in Spring Boot.
+### Reason
+Python is responsible for unstructured document processing, while Spring Boot owns student identity and business state.
+### Trade-off
+Requires a structured processing result contract between services.
+
+---
+
+## D-051
+### Decision
+Prioritize registration number and NeoPAT ID over name matching.
+### Reason
+Strong institutional identifiers provide safer deterministic identity resolution than names.
+### Trade-off
+Documents containing only names require stricter ambiguity handling.
+
+---
+
+## D-052
+### Decision
+Never automatically shortlist a student using weak fuzzy name matching.
+### Reason
+False identity matches can associate the wrong student with a placement opportunity.
+### Trade-off
+Some name-only records require manual review.
+
+---
+
+## D-053
+### Decision
+Treat OCR-required documents as a distinct recoverable state.
+### Reason
+Scanned/image documents cannot be safely treated as successfully parsed text documents.
+### Trade-off
+Some documents require a future OCR capability.
+
+---
+
+## D-054
+### Decision
+Use structured document classifications rather than assuming every attachment is a shortlist.
+### Reason
+Placement emails commonly contain eligibility documents, job descriptions, recruitment instructions and shortlists in the same message.
+### Trade-off
+Requires document classification before shortlist extraction.

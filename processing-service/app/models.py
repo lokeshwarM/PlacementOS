@@ -66,3 +66,22 @@ class ExtractionResult(BaseCamelModel):
     roles: Optional[List[RoleModel]] = Field(default_factory=list, alias="roles")
     field_evidence: Optional[Dict[str, str]] = Field(default_factory=dict, alias="fieldEvidence")
     error_message: Optional[str] = Field(default=None, alias="errorMessage")
+
+class DocumentCandidate(BaseCamelModel):
+    registration_number: Optional[str] = Field(default=None, alias="registrationNumber")
+    neopat_id: Optional[str] = Field(default=None, alias="neopatId")
+    name: Optional[str] = Field(default=None, alias="name")
+    role: Optional[str] = Field(default=None, alias="role")
+    evidence: Optional[str] = Field(default=None, alias="evidence")
+
+class DocumentProcessingResult(BaseCamelModel):
+    document_id: Optional[str] = Field(default=None, alias="documentId")
+    attachment_id: Optional[int] = Field(default=None, alias="attachmentId")
+    filename: str = Field(..., alias="filename")
+    document_type: str = Field(..., alias="documentType")
+    classification: str = Field(..., alias="classification")
+    confidence: float = Field(default=1.0, alias="confidence")
+    ocr_required: bool = Field(default=False, alias="ocrRequired")
+    candidates: List[DocumentCandidate] = Field(default_factory=list, alias="candidates")
+    error_message: Optional[str] = Field(default=None, alias="errorMessage")
+

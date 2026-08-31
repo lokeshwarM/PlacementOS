@@ -101,3 +101,11 @@ Google Cloud Pub/Sub pushes Gmail notifications to a dedicated webhook (`/api/in
 - **Personal Profile Data**: Eligibility results reflect sensitive student data (CGPA, arrears, gender, academic standing).
 - **Zero Logging Rule**: Student profiles, detailed criteria maps, and full evaluation JSON are excluded from ordinary application logs.
 - **Endpoint Authorization**: In production, students may only view their own eligibility results; administrative oversight is restricted to ADMIN roles. (Temporarily accessible during development).
+
+## Attachment Binary Security & Storage Isolation
+
+- **Path Traversal Protection**: Storage references and keys are strictly validated and normalized to prevent directory traversal attacks (e.g. `../../`).
+- **No Direct Execution**: Uploaded and downloaded attachment files are never executed and macro execution is disabled.
+- **Internal Service Key Authentication**: The internal endpoint `GET /api/v1/internal/attachments/{id}/content` is protected by `X-Internal-Service-Key` and is never exposed publicly.
+- **File Size Limits**: Ingestion enforces a strict maximum file size limit (25MB) to prevent Denial-of-Service.
+- **Privacy in Logs**: Raw document contents, candidate tables, and personal identifiers from shortlist files are excluded from application logs. Only safe metadata (attachment ID, candidate count, match status) is logged.
