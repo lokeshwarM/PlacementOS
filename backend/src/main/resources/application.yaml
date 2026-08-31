@@ -26,6 +26,11 @@ app:
       client-id: ${GOOGLE_OAUTH_CLIENT_ID}
       client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET}
       redirect-uri: http://localhost:8080/api/internal/gmail/oauth2/callback
+      encryption-key: ${GMAIL_TOKEN_ENCRYPTION_KEY:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=}
+
+logging:
+  level:
+    org.hibernate.orm.connections.pooling: WARN
 
 management:
   endpoints:
