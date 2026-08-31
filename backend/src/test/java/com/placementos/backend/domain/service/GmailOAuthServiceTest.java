@@ -32,6 +32,9 @@ public class GmailOAuthServiceTest {
     @Mock
     private GmailSourceRepository gmailSourceRepository;
 
+    @Mock
+    private GmailCredentialEncryptionService encryptionService;
+
     @InjectMocks
     private GmailOAuthService gmailOAuthService;
 
