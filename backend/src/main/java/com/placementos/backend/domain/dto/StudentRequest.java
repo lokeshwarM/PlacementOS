@@ -40,6 +40,18 @@ public class StudentRequest {
     @Size(max = 20, message = "Phone number must not exceed 20 characters.")
     private String phoneNumber; // optional
 
+    @Size(max = 50, message = "Degree must not exceed 50 characters.")
+    private String degree; // optional
+
+    @Size(max = 100, message = "Specialization must not exceed 100 characters.")
+    private String specialization; // optional
+
+    @Min(value = 0, message = "Standing arrears cannot be negative.")
+    private Integer standingArrears; // optional (null = unknown)
+
+    @Size(max = 20, message = "Gender must not exceed 20 characters.")
+    private String gender; // optional
+
     // -------------------------------------------------------------------------
     // Getters and Setters
     // -------------------------------------------------------------------------
@@ -63,4 +75,16 @@ public class StudentRequest {
 
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+    public String getDegree() { return degree; }
+    public void setDegree(String degree) { this.degree = degree; }
+
+    public String getSpecialization() { return specialization; }
+    public void setSpecialization(String specialization) { this.specialization = specialization; }
+
+    public Integer getStandingArrears() { return standingArrears; }
+    public void setStandingArrears(Integer standingArrears) { this.standingArrears = standingArrears; }
+
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
 }

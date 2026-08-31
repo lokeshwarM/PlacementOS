@@ -22,6 +22,8 @@ All timestamps are stored as `TIMESTAMPTZ` (UTC). No local-timezone text values 
 ```
 students
   |
+  +---- student_eligibility_results ---- placement_roles & placement_drives
+  |
   +---- applications ---- placement_drives
   |
   +---- notifications ---- placement_drives
@@ -37,6 +39,8 @@ gmail_sources
 placement_drives
   |
   +---- placement_roles (first-class role support with role-specific eligibility)
+  |       |
+  |       +---- student_eligibility_results (persisted evaluation per role)
   |
   +---- attachments
   |
@@ -98,18 +102,22 @@ Indexes: `message_id`, `gmail_source_id`, `thread_id`
 ### students
 Stores VIT student profiles required for placement personalisation.
 
-| Field               | Type          | Notes                       |
-|---------------------|---------------|-----------------------------|
-| id                  | BIGSERIAL     | Primary Key                 |
-| registration_number | VARCHAR(20)   | UNIQUE, NOT NULL            |
-| neopat_id           | VARCHAR(20)   | UNIQUE, nullable            |
-| name                | VARCHAR(255)  | NOT NULL                    |
-| branch              | VARCHAR(100)  | NOT NULL                    |
-| batch               | INTEGER       | Graduation year, NOT NULL   |
-| cgpa                | NUMERIC(4,2)  | 0.00–10.00 CHECK constraint |
-| phone_number        | VARCHAR(20)   | Nullable                    |
-| created_at          | TIMESTAMPTZ   | UTC, NOT NULL               |
-| updated_at          | TIMESTAMPTZ   | UTC, NOT NULL               |
+| Field               | Type          | Notes                                                 |
+|---------------------|---------------|-------------------------------------------------------|
+| id                  | BIGSERIAL     | Primary Key                                           |
+| registration_number | VARCHAR(20)   | UNIQUE, NOT NULL                                      |
+| neopat_id           | VARCHAR(20)   | UNIQUE, nullable                                      |
+| name                | VARCHAR(255)  | NOT NULL                                              |
+| branch              | VARCHAR(100)  | NOT NULL                                              |
+| batch               | INTEGER       | Graduation year, NOT NULL                             |
+| cgpa                | NUMERIC(4,2)  | 0.00–10.00 CHECK constraint                           |
+| phone_number        | VARCHAR(20)   | Nullable                                              |
+| degree              | VARCHAR(50)   | E.g. B.Tech, M.Tech, MCA, nullable                    |
+| specialization      | VARCHAR(100)  | E.g. Artificial Intelligence, nullable                 |
+| standing_arrears    | INTEGER       | Nullable (NULL = unknown, 0 = 0 arrears, >0 = arrears)|
+| gender              | VARCHAR(20)   | E.g. MALE, FEMALE, OTHER, nullable                    |
+| created_at          | TIMESTAMPTZ   | UTC, NOT NULL                                         |
+| updated_at          | TIMESTAMPTZ   | UTC, NOT NULL                                         |
 
 Indexes: `registration_number`, `neopat_id`, `name`
 
@@ -153,6 +161,27 @@ Represents an individual job role/position within a placement drive.
 
 Unique constraint: `(placement_drive_id, role_title)`
 Indexes: `placement_drive_id`
+
+---
+
+### student_eligibility_results
+Persisted, explainable eligibility evaluation decisions for a student on a specific placement role.
+
+| Field                | Type         | Notes                                                              |
+|----------------------|--------------|--------------------------------------------------------------------|
+| id                   | BIGSERIAL    | Primary Key                                                        |
+| student_id           | BIGINT       | FK → students(id) ON DELETE CASCADE, NOT NULL                      |
+| placement_drive_id   | BIGINT       | FK → placement_drives(id) ON DELETE CASCADE, NOT NULL              |
+| placement_role_id    | BIGINT       | FK → placement_roles(id) ON DELETE CASCADE, NOT NULL               |
+| decision             | VARCHAR(50)  | ELIGIBLE / NOT_ELIGIBLE / REVIEW_REQUIRED, NOT NULL                 |
+| criteria_results     | JSONB        | Detailed structured list of evaluated criteria & reasons, NOT NULL |
+| evaluator_version    | VARCHAR(50)  | E.g. eligibility-v1, NOT NULL                                      |
+| evaluated_at         | TIMESTAMPTZ  | When evaluation was executed, NOT NULL                             |
+| created_at           | TIMESTAMPTZ  | UTC, NOT NULL                                                      |
+| updated_at           | TIMESTAMPTZ  | UTC, NOT NULL                                                      |
+
+Unique constraint: `(student_id, placement_role_id)`
+Indexes: `student_id`, `placement_drive_id`, `placement_role_id`
 
 ---
 

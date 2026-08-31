@@ -133,5 +133,9 @@ public class StudentService {
         student.setBatch(request.getBatch());
         student.setCgpa(request.getCgpa());
         student.setPhoneNumber(request.getPhoneNumber());
+        student.setDegree(request.getDegree());
+        student.setSpecialization(request.getSpecialization());
+        student.setStandingArrears(request.getStandingArrears());
+        student.setGender(request.getGender());
     }
 }

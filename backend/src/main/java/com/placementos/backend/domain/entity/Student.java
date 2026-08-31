@@ -54,6 +54,18 @@ public class Student {
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
+    @Column(name = "degree", length = 50)
+    private String degree;
+
+    @Column(name = "specialization", length = 100)
+    private String specialization;
+
+    @Column(name = "standing_arrears")
+    private Integer standingArrears;
+
+    @Column(name = "gender", length = 20)
+    private String gender;
+
     @Column(name = "created_at", nullable = false, updatable = false,
             columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
     private Instant createdAt;
@@ -86,6 +98,7 @@ public class Student {
     // Getters and Setters
     // -------------------------------------------------------------------------
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     public String getRegistrationNumber() { return registrationNumber; }
     public void setRegistrationNumber(String registrationNumber) { this.registrationNumber = registrationNumber; }
@@ -107,6 +120,18 @@ public class Student {
 
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+    public String getDegree() { return degree; }
+    public void setDegree(String degree) { this.degree = degree; }
+
+    public String getSpecialization() { return specialization; }
+    public void setSpecialization(String specialization) { this.specialization = specialization; }
+
+    public Integer getStandingArrears() { return standingArrears; }
+    public void setStandingArrears(Integer standingArrears) { this.standingArrears = standingArrears; }
+
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
 
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

@@ -43,6 +43,12 @@ OpenAPI documentation (Swagger UI) is **intentionally deferred** as per mileston
 - `GET /api/v1/reminders/student/{studentId}` - Get all reminders for a student
 - `POST /api/v1/reminders/{id}/complete` - Mark a reminder as completed
 
+## Eligibility APIs
+- `POST /api/v1/eligibility/students/{studentId}/drives/{driveId}` - Evaluates and persists eligibility for all roles in a drive
+- `GET /api/v1/eligibility/students/{studentId}/drives/{driveId}` - Retrieves persisted eligibility results for a drive
+- `POST /api/v1/eligibility/students/{studentId}/roles/{roleId}` - Evaluates and persists eligibility for a specific role
+- `GET /api/v1/eligibility/students/{studentId}/roles/{roleId}` - Retrieves persisted eligibility result for a specific role
+
 ## Processing & Extraction APIs (Internal)
 - `POST /api/v1/internal/extraction/result` - Callback for Python processing service to submit structured extraction results to Spring Boot.
 - `GET /api/v1/internal/messages/{messageId}` - Endpoint for Python worker to retrieve normalized email text and metadata.

@@ -45,3 +45,4 @@ To run the application locally, you must provide your own Neon PostgreSQL and Re
 - **Placement Email Classification**: Deterministic classification engine identifying placement vs. non-placement emails with confidence scoring.
 - **Structured Multi-Role Extraction**: Extracts company, drive title, multiple roles (`PlacementRole`), common drive-level eligibility, role-specific eligibility, deadlines, and important dates with strict schema validation.
 - **Idempotent Ingestion**: Spring Boot `PlacementIngestionService` validates extraction results and idempotently persists placement opportunities in PostgreSQL.
+- **Student-Level Eligibility Engine**: Evaluates student profiles against drive common criteria and role-specific criteria, providing explainable criterion results (`PASS`, `FAIL`, `UNKNOWN`, `UNSUPPORTED`), and idempotently persists per-role decisions (`ELIGIBLE`, `NOT_ELIGIBLE`, `REVIEW_REQUIRED`) in PostgreSQL.

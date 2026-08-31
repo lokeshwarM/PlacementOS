@@ -12,5 +12,5 @@
 10. **Classification & Extraction**: Python worker consumes `GMAIL_MESSAGE_RETRIEVED`, classifies placement vs. non-placement, deterministically parses company, multi-roles, common vs. role-specific eligibility, deadlines, and dates (with LLM fallback for ambiguous formats), and validates against strict Pydantic schema.
 11. **Extraction Ingestion Callback**: Python worker submits structured extraction result to Spring Boot `POST /api/v1/internal/extraction/result`.
 12. **Durable Placement Persistence**: Spring Boot `PlacementIngestionService` validates extraction payload, idempotently creates/updates `PlacementDrive` and child `PlacementRole` records in PostgreSQL, and updates `processed_emails` status to `EXTRACTED` (or `NON_PLACEMENT`).
-13. **Eligibility Evaluation (Future Milestone)**: Eligibility Engine evaluates students against common and role-specific placement criteria.
+13. **Student-Level Eligibility Evaluation**: `EligibilityService` evaluates student profile against drive common criteria and role-specific criteria, produces explainable criterion results (`PASS`, `FAIL`, `UNKNOWN`, `UNSUPPORTED`), and idempotently records per-role decisions (`ELIGIBLE`, `NOT_ELIGIBLE`, `REVIEW_REQUIRED`) in `student_eligibility_results`.
 14. **Notification Dispatch (Future Milestone)**: Personalised alerts sent via Notification Queue.

@@ -95,3 +95,9 @@ Google Cloud Pub/Sub pushes Gmail notifications to a dedicated webhook (`/api/in
 - **No Direct Database Access**: The Python processing service has **zero direct access** to PostgreSQL business tables or database credentials.
 - **No Direct Gmail Access**: Python has no access to Google OAuth refresh tokens or Gmail APIs. It only operates on normalized payloads provided by Spring Boot.
 - **Strict Schema Validation**: Probabilistic AI/LLM outputs must pass strict Pydantic validation before being sent to Spring Boot, and Spring Boot strictly validates required fields (e.g., non-blank company name, confidence threshold) before writing to PostgreSQL.
+
+## Student Eligibility Privacy & Access Control
+
+- **Personal Profile Data**: Eligibility results reflect sensitive student data (CGPA, arrears, gender, academic standing).
+- **Zero Logging Rule**: Student profiles, detailed criteria maps, and full evaluation JSON are excluded from ordinary application logs.
+- **Endpoint Authorization**: In production, students may only view their own eligibility results; administrative oversight is restricted to ADMIN roles. (Temporarily accessible during development).

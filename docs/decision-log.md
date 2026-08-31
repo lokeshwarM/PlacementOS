@@ -347,3 +347,63 @@ Keep placement classification separate from student eligibility evaluation.
 Classifying and extracting a placement drive is a source-document concern, while deciding whether a particular student qualifies is a business-rule concern.
 ### Trade-off
 Adds an additional processing stage.
+
+---
+
+## D-043
+### Decision
+Evaluate eligibility as explicit criterion results followed by a final role decision.
+### Reason
+Students need an explainable result rather than a single opaque boolean.
+### Trade-off
+Requires a structured evaluation result.
+
+---
+
+## D-044
+### Decision
+Combine drive-level common eligibility with role-specific eligibility using logical AND.
+### Reason
+Role-specific constraints are additional requirements rather than replacements for common drive requirements.
+### Trade-off
+The evaluator must evaluate criteria at two levels.
+
+---
+
+## D-045
+### Decision
+Represent unknown student information separately from failed eligibility.
+### Reason
+Missing student data should not automatically imply ineligibility.
+### Trade-off
+Requires a REVIEW_REQUIRED outcome.
+
+---
+
+## D-046
+### Decision
+Do not automatically evaluate unsupported natural-language eligibility conditions.
+### Reason
+Unsafe inference can produce incorrect eligibility results.
+### Trade-off
+Some students will require manual review.
+
+---
+
+## D-047
+### Decision
+Persist the latest eligibility result per student-role combination.
+### Reason
+Eligibility results will later power notifications, dashboards, and application workflows.
+### Trade-off
+Results must be reevaluated when student or placement criteria change.
+
+---
+
+## D-048
+### Decision
+Version eligibility evaluator behavior using a simple evaluator version identifier.
+### Reason
+Future rule-engine changes may change outcomes and should remain traceable.
+### Trade-off
+Results must retain which evaluator version produced them.

@@ -50,7 +50,11 @@ Spring Boot `PlacementIngestionService` (Validates & Idempotently Persists `Plac
 
 ↓
 
-Eligibility Engine (Spring Boot — Future Milestone)
+Student-Level Eligibility Engine (`EligibilityEvaluationEngine` & `EligibilityService`):
+  1. Combines Drive-Level Common Eligibility with Role-Specific Eligibility (Logical AND)
+  2. Evaluates CGPA, Branch, Specialization, Batch, Degree, Standing Arrears, Gender
+  3. Produces Explainable Criterion Results (PASS, FAIL, UNKNOWN, UNSUPPORTED)
+  4. Idempotently Persists Per-Role Decision (ELIGIBLE, NOT_ELIGIBLE, REVIEW_REQUIRED) in `student_eligibility_results`
 
 ↓
 

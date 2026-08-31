@@ -222,3 +222,31 @@ What happens when eligibility is missing?
 
 **Answer:**
 The system preserves the field as unspecified/null rather than inventing a restriction.
+
+---
+
+### Student-Level Eligibility Engine
+
+**Question:**
+Why separate eligibility evaluation from placement extraction?
+
+**Answer:**
+Extraction determines what the company requires. Eligibility evaluation determines whether a particular student satisfies those requirements. They are different responsibilities.
+
+**Question:**
+Why have ELIGIBLE, NOT_ELIGIBLE, and REVIEW_REQUIRED?
+
+**Answer:**
+A missing student value is different from a failed criterion. The system should not incorrectly reject students simply because some required information is unavailable.
+
+**Question:**
+How do you combine common and role-specific eligibility?
+
+**Answer:**
+Common drive criteria are evaluated first and role-specific criteria are additional requirements. A role is eligible only when all applicable criteria are satisfied.
+
+**Question:**
+Why persist eligibility results?
+
+**Answer:**
+They will be reused by notifications, dashboards and application workflows, and persistence provides an auditable current decision.

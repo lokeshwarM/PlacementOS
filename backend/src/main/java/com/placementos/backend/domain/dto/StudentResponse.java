@@ -19,6 +19,10 @@ public class StudentResponse {
     private Integer batch;
     private BigDecimal cgpa;
     private String phoneNumber;
+    private String degree;
+    private String specialization;
+    private Integer standingArrears;
+    private String gender;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -36,6 +40,10 @@ public class StudentResponse {
         response.batch = student.getBatch();
         response.cgpa = student.getCgpa();
         response.phoneNumber = student.getPhoneNumber();
+        response.degree = student.getDegree();
+        response.specialization = student.getSpecialization();
+        response.standingArrears = student.getStandingArrears();
+        response.gender = student.getGender();
         response.createdAt = student.getCreatedAt();
         response.updatedAt = student.getUpdatedAt();
         return response;
@@ -52,6 +60,10 @@ public class StudentResponse {
     public Integer getBatch() { return batch; }
     public BigDecimal getCgpa() { return cgpa; }
     public String getPhoneNumber() { return phoneNumber; }
+    public String getDegree() { return degree; }
+    public String getSpecialization() { return specialization; }
+    public Integer getStandingArrears() { return standingArrears; }
+    public String getGender() { return gender; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

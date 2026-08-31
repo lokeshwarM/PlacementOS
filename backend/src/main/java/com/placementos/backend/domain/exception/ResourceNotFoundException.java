@@ -33,4 +33,8 @@ public class ResourceNotFoundException extends RuntimeException {
     public static ResourceNotFoundException application(Long id) {
         return new ResourceNotFoundException("Application not found with id: " + id);
     }
+
+    public static ResourceNotFoundException placementRole(Long id) {
+        return new ResourceNotFoundException("Placement role not found with id: " + id);
+    }
 }
