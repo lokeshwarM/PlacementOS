@@ -31,6 +31,31 @@ public class GmailSource {
     @Column(nullable = false)
     private String status;
 
+    /**
+     * Opaque mailbox synchronization cursor, stored as a String to match the Gmail API contract.
+     * The Gmail Java client library returns historyId as {@code String} from
+     * {@code WatchResponse.getHistoryId()}. This is a cursor position only — it does NOT
+     * indicate that Gmail messages have been fetched or processed. Actual Gmail History API
+     * synchronization will be performed in the next milestone.
+     */
+    @Column(name = "last_history_id")
+    private String lastHistoryId;
+
+    /**
+     * When the current Gmail push watch registration expires.
+     * Gmail watches expire within approximately 7 days. A scheduled renewal
+     * workflow (deferred to a future milestone) must renew before this time.
+     */
+    @Column(name = "watch_expiration")
+    private ZonedDateTime watchExpiration;
+
+    /**
+     * Lifecycle state of the Gmail push watch.
+     * Values: NONE, ACTIVE, EXPIRED
+     */
+    @Column(name = "watch_status", nullable = false)
+    private String watchStatus = "NONE";
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private ZonedDateTime createdAt;
@@ -83,6 +108,30 @@ public class GmailSource {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getLastHistoryId() {
+        return lastHistoryId;
+    }
+
+    public void setLastHistoryId(String lastHistoryId) {
+        this.lastHistoryId = lastHistoryId;
+    }
+
+    public ZonedDateTime getWatchExpiration() {
+        return watchExpiration;
+    }
+
+    public void setWatchExpiration(ZonedDateTime watchExpiration) {
+        this.watchExpiration = watchExpiration;
+    }
+
+    public String getWatchStatus() {
+        return watchStatus;
+    }
+
+    public void setWatchStatus(String watchStatus) {
+        this.watchStatus = watchStatus;
     }
 
     public ZonedDateTime getCreatedAt() {
