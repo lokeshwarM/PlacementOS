@@ -66,3 +66,19 @@ Gmail source authentication is separate from student authentication. The current
 - OAuth **access tokens** are treated as transient credentials. They are kept in memory to execute Gmail API calls and are NEVER stored durably in the database.
 - Encryption keys must be externalized. The PostgreSQL database NEVER stores the encryption key. Production environments require robust secret management for the `GMAIL_TOKEN_ENCRYPTION_KEY`.
 - Future key rotation is supported through a versioned ciphertext payload format (e.g. `v1:{iv}:{ciphertext}`).
+
+## Pub/Sub Push Webhook
+
+Google Cloud Pub/Sub pushes Gmail notifications to a dedicated webhook (`/api/internal/gmail/pubsub/push`).
+
+**Push Authentication**:
+- The webhook is authenticated via **Google-signed JWTs**.
+- Every push delivery includes an `Authorization: Bearer <jwt>` header.
+- PlacementOS validates the JWT signature against Google's public certificates.
+- The JWT claims are strictly verified:
+  - `iss` must be `https://accounts.google.com`.
+  - `aud` must match the exact webhook URL.
+  - `email` must match the specific Google Service Account configured for the push subscription.
+  - `email_verified` must be true.
+  - Expiry is enforced.
+- **This is distinct from the OAuth token flow** and distinct from Spring Security role checks. The endpoint strictly rejects any push that fails JWT verification.

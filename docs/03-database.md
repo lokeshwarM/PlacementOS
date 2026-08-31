@@ -41,6 +41,26 @@ processed_emails
 
 ## Tables
 
+### gmail_sources
+Stores registered Gmail accounts (CDC inboxes) and their access credentials for email ingestion.
+
+| Field              | Type         | Notes                                      |
+|--------------------|--------------|--------------------------------------------|
+| id                 | BIGSERIAL    | Primary Key                                |
+| email_address      | VARCHAR(255) | UNIQUE, NOT NULL                           |
+| provider           | VARCHAR(50)  | NOT NULL                                   |
+| credential         | TEXT         | AES-256-GCM encrypted refresh token        |
+| status             | VARCHAR(50)  | ACTIVE / ERROR                             |
+| last_history_id    | VARCHAR(255) | Opaque cursor string for History API       |
+| watch_expiration   | TIMESTAMPTZ  | When the current Pub/Sub watch expires     |
+| watch_status       | VARCHAR(50)  | NONE / ACTIVE / EXPIRED                    |
+| created_at         | TIMESTAMPTZ  | UTC, NOT NULL                              |
+| updated_at         | TIMESTAMPTZ  | UTC, NOT NULL                              |
+
+Indexes: `email_address`
+
+---
+
 ### students
 Stores VIT student profiles required for placement personalisation.
 

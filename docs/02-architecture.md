@@ -6,11 +6,19 @@ CDC Email
 
 ↓
 
-Gmail Watch API
+Gmail Watch API (Google Cloud Pub/Sub)
 
 ↓
 
-Redis Queue
+Pub/Sub Push Webhook (Spring Boot)
+
+↓
+
+Gmail History API Fetch (Spring Boot)
+
+↓
+
+Redis Queue (Event Transport)
 
 ↓
 
