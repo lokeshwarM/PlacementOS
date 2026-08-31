@@ -15,7 +15,7 @@ spring:
     locations: classpath:db/migration
   data:
     redis:
-      url: ${SPRING_REDIS_URL:redis://localhost:6379}
+      url: ${SPRING_DATA_REDIS_URL:redis://localhost:6379}
 
 server:
   port: ${SERVER_PORT:8080}

@@ -19,11 +19,12 @@ PlacementOS uses a distributed architecture designed for scalability and clear s
 
 ## Environment Setup
 
-To run the application locally, you must provide your own Neon PostgreSQL credentials:
+To run the application locally, you must provide your own Neon PostgreSQL and Redis credentials:
 1. Navigate to the `backend/` directory.
 2. Copy `backend/.env.example` to `backend/.env`.
 3. Update the `.env` file with your `SPRING_DATASOURCE_URL` (this single URL should contain your username, password, and SSL parameters).
-4. The `backend/.env` file is ignored by Git to ensure secrets are never committed.
+4. Update the `.env` file with your `SPRING_DATA_REDIS_URL` (Upstash Redis URL or local Redis URL).
+5. The `backend/.env` file is ignored by Git to ensure secrets are never committed.
 
 ## Database
 
