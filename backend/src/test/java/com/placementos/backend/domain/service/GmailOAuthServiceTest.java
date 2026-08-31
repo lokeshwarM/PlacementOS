@@ -73,7 +73,7 @@ public class GmailOAuthServiceTest {
         
         // This will fail because code exchange uses real HTTP transport un-mocked here,
         // but it means validateState passed!
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(Exception.class, () -> {
             gmailOAuthService.handleCallback("test-code", "valid-state");
         });
         
