@@ -98,8 +98,11 @@ public class GmailWatchService {
                         "No Gmail source registered for: " + emailAddress));
 
         // historyId is stored as a String to match the Gmail API contract.
+        // The Java client library represents it internally as BigInteger,
+        // but we store it as a String to remain agnostic of numeric semantics.
         // This is a cursor position — it does NOT represent processed messages.
-        source.setLastHistoryId(response.getHistoryId());
+        source.setLastHistoryId(response.getHistoryId() != null
+                ? response.getHistoryId().toString() : null);
 
         // WatchResponse.getExpiration() is epoch milliseconds as a Long
         if (response.getExpiration() != null) {
