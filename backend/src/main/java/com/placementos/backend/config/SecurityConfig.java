@@ -40,6 +40,10 @@ public class SecurityConfig {
                 // e.g. .requestMatchers("/api/v1/students/**").hasRole("STUDENT")
                 .requestMatchers("/api/v1/**").permitAll()
                 
+                // Internal development/admin endpoint for Gmail OAuth
+                // In production, this should be restricted to ADMINs or secured via VPN/IAP
+                .requestMatchers("/api/internal/gmail/oauth2/**").permitAll()
+                
                 // Any other unmapped requests should be authenticated (fail-safe)
                 .anyRequest().authenticated()
             );
