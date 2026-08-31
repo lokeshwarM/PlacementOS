@@ -292,8 +292,58 @@ Debugging content-specific issues requires controlled database inspection or tes
 
 ## D-037
 ### Decision
-Use Redis Streams with a consumer group instead of Redis Pub/Sub for durable asynchronous event processing.
+Represent multiple roles as first-class `PlacementRole` records rather than storing roles as a single text field.
 ### Reason
-Redis Pub/Sub is not durable and drops messages if no consumers are actively listening at publish time. Redis Streams provides durable persistence, consumer groups, offsets, and pending entry lists (PEL) for at-least-once processing.
+A placement drive can contain multiple positions and role-specific eligibility. A first-class role model allows each role to carry its own requirements without losing structure. `(placement_drive_id, role_title)` uniquely identifies a role within a single placement drive.
 ### Trade-off
-Requires managing consumer group creation and explicit message acknowledgments (`XACK`).
+Adds another relational entity and more persistence logic.
+
+---
+
+## D-038
+### Decision
+Separate drive-level/common eligibility from role-specific eligibility.
+### Reason
+Many placement emails apply one common eligibility rule to all positions while adding additional restrictions for specific roles.
+### Trade-off
+The future eligibility engine must combine common and role-specific criteria.
+
+---
+
+## D-039
+### Decision
+Use deterministic parsing before AI fallback wherever reliable.
+### Reason
+Structured placement emails often contain predictable fields and deterministic extraction is cheaper and more reproducible than LLM inference.
+### Trade-off
+Unusual email layouts require AI fallback.
+
+---
+
+## D-040
+### Decision
+Never infer unstated eligibility restrictions.
+### Reason
+Incorrect eligibility could cause students to miss opportunities or receive misleading notifications. Missing fields remain null/unspecified.
+### Trade-off
+Some emails will produce partially unspecified structured results requiring later review.
+
+---
+
+## D-041
+### Decision
+Validate LLM output against a strict structured schema before it can affect business state.
+### Reason
+LLM output is probabilistic and must not directly become trusted database state. Spring Boot validates extraction results before writing to PostgreSQL.
+### Trade-off
+Requires explicit schema validation and failure handling.
+
+---
+
+## D-042
+### Decision
+Keep placement classification separate from student eligibility evaluation.
+### Reason
+Classifying and extracting a placement drive is a source-document concern, while deciding whether a particular student qualifies is a business-rule concern.
+### Trade-off
+Adds an additional processing stage.

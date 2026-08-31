@@ -68,6 +68,10 @@ public class PlacementDrive {
             columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
     private Instant updatedAt;
 
+    @OneToMany(mappedBy = "placementDrive", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("roleOrder ASC")
+    private java.util.List<PlacementRole> roles = new java.util.ArrayList<>();
+
     // -------------------------------------------------------------------------
     // Lifecycle hooks
     // -------------------------------------------------------------------------
@@ -93,6 +97,7 @@ public class PlacementDrive {
     // Getters and Setters
     // -------------------------------------------------------------------------
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     public String getCompanyName() { return companyName; }
     public void setCompanyName(String companyName) { this.companyName = companyName; }
@@ -117,6 +122,23 @@ public class PlacementDrive {
 
     public DriveStatus getStatus() { return status; }
     public void setStatus(DriveStatus status) { this.status = status; }
+
+    public java.util.List<PlacementRole> getRoles() { return roles; }
+    public void setRoles(java.util.List<PlacementRole> roles) { this.roles = roles; }
+
+    public void addRole(PlacementRole role) {
+        if (role != null) {
+            roles.add(role);
+            role.setPlacementDrive(this);
+        }
+    }
+
+    public void removeRole(PlacementRole role) {
+        if (role != null) {
+            roles.remove(role);
+            role.setPlacementDrive(null);
+        }
+    }
 
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

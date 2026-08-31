@@ -60,6 +60,13 @@ public class GmailMessageServiceTest {
     @Mock
     private Gmail.Users.Messages.Get messagesGetRequest;
 
+    @Mock
+    private org.springframework.data.redis.core.RedisTemplate<String, Object> redisTemplate;
+
+    @Mock
+    private org.springframework.data.redis.core.StreamOperations<String, Object, Object> streamOps;
+
+    private tools.jackson.databind.ObjectMapper objectMapper;
     private GmailMessageService messageService;
 
     private static final String SOURCE_EMAIL = "cdc@example.com";
@@ -67,12 +74,16 @@ public class GmailMessageServiceTest {
 
     @BeforeEach
     void setUp() {
+        objectMapper = new tools.jackson.databind.ObjectMapper();
+        lenient().when(redisTemplate.opsForStream()).thenReturn(streamOps);
         messageService = new GmailMessageService(
                 sourceRepository,
                 oauthService,
                 mimeNormalizer,
                 gmailMessageRepository,
-                processedEmailService
+                processedEmailService,
+                redisTemplate,
+                objectMapper
         );
     }
 

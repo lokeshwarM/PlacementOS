@@ -36,6 +36,8 @@ gmail_sources
 
 placement_drives
   |
+  +---- placement_roles (first-class role support with role-specific eligibility)
+  |
   +---- attachments
   |
   +---- shortlist_entries (also links to attachments)
@@ -116,21 +118,41 @@ Indexes: `registration_number`, `neopat_id`, `name`
 ### placement_drives
 Represents a unique placement opportunity extracted from a CDC communication.
 
-| Field                | Type         | Notes                                |
-|----------------------|--------------|--------------------------------------|
-| id                   | BIGSERIAL    | Primary Key                          |
-| company_name         | VARCHAR(255) | NOT NULL                             |
-| title                | VARCHAR(500) | Nullable                             |
-| description          | TEXT         | Nullable                             |
-| received_at          | TIMESTAMPTZ  | When the email arrived               |
-| application_deadline | TIMESTAMPTZ  | Nullable                             |
-| source_email_id      | VARCHAR(255) | Gmail message ID of originating mail |
-| eligibility_criteria | JSONB        | Extensible structured criteria       |
-| status               | VARCHAR(50)  | OPEN / CLOSED / CANCELLED / COMPLETED|
-| created_at           | TIMESTAMPTZ  | UTC, NOT NULL                        |
-| updated_at           | TIMESTAMPTZ  | UTC, NOT NULL                        |
+| Field                | Type         | Notes                                             |
+|----------------------|--------------|---------------------------------------------------|
+| id                   | BIGSERIAL    | Primary Key                                       |
+| company_name         | VARCHAR(255) | NOT NULL                                          |
+| title                | VARCHAR(500) | Nullable                                          |
+| description          | TEXT         | Nullable                                          |
+| received_at          | TIMESTAMPTZ  | When the email arrived                            |
+| application_deadline | TIMESTAMPTZ  | Nullable                                          |
+| source_email_id      | VARCHAR(255) | **UNIQUE** Gmail message ID of originating mail   |
+| eligibility_criteria | JSONB        | Common drive-level eligibility criteria           |
+| status               | VARCHAR(50)  | OPEN / CLOSED / CANCELLED / COMPLETED             |
+| created_at           | TIMESTAMPTZ  | UTC, NOT NULL                                     |
+| updated_at           | TIMESTAMPTZ  | UTC, NOT NULL                                     |
 
-Indexes: `company_name`, `application_deadline`, `status`
+Unique constraint: `(source_email_id)`
+Indexes: `company_name`, `application_deadline`, `status`, `source_email_id`
+
+---
+
+### placement_roles
+Represents an individual job role/position within a placement drive.
+
+| Field                | Type         | Notes                                             |
+|----------------------|--------------|---------------------------------------------------|
+| id                   | BIGSERIAL    | Primary Key                                       |
+| placement_drive_id   | BIGINT       | FK → placement_drives(id) ON DELETE CASCADE       |
+| role_title           | VARCHAR(255) | Role title, NOT NULL                              |
+| role_description     | TEXT         | Nullable                                          |
+| role_order           | INTEGER      | Ordering number within the drive, NOT NULL        |
+| eligibility_criteria | JSONB        | Role-specific eligibility criteria (if specified) |
+| created_at           | TIMESTAMPTZ  | UTC, NOT NULL                                     |
+| updated_at           | TIMESTAMPTZ  | UTC, NOT NULL                                     |
+
+Unique constraint: `(placement_drive_id, role_title)`
+Indexes: `placement_drive_id`
 
 ---
 
@@ -145,7 +167,7 @@ Idempotency guard for Gmail ingestion. Prevents the same email being processed m
 | source_identifier  | VARCHAR(255) | Nullable — inbox identifier                                        |
 | received_at        | TIMESTAMPTZ  | Nullable                                                           |
 | processed_at       | TIMESTAMPTZ  | UTC, NOT NULL                                                      |
-| processing_status  | VARCHAR(50)  | PENDING / DISCOVERED / QUEUED / RETRIEVED / PROCESSED / FAILED / DUPLICATE |
+| processing_status  | VARCHAR(50)  | PENDING / DISCOVERED / QUEUED / RETRIEVED / EXTRACTED / NON_PLACEMENT / PROCESSED / FAILED / DUPLICATE |
 | error_message      | TEXT         | Nullable — failure details                                         |
 
 Indexes: `message_id`

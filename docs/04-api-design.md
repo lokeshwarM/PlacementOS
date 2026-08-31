@@ -20,7 +20,7 @@ OpenAPI documentation (Swagger UI) is **intentionally deferred** as per mileston
 
 ## Placement Drive APIs
 - `GET /api/v1/placements` - List all placement drives
-- `GET /api/v1/placements/{id}` - Get placement drive by ID
+- `GET /api/v1/placements/{id}` - Get placement drive by ID (includes child `roles`)
 - `GET /api/v1/placements/source-email/{sourceEmailId}` - Get by source email
 - `POST /api/v1/placements` - Create a placement drive
 - `PUT /api/v1/placements/{id}` - Update a placement drive
@@ -43,6 +43,8 @@ OpenAPI documentation (Swagger UI) is **intentionally deferred** as per mileston
 - `GET /api/v1/reminders/student/{studentId}` - Get all reminders for a student
 - `POST /api/v1/reminders/{id}/complete` - Mark a reminder as completed
 
-## Internal/Future APIs (Deferred)
-- Processed Email APIs are internal and intentionally excluded from public endpoints.
-- **Security**: The application is protected by Spring Security. `/api/v1/**` is temporarily permitted for development, but will be secured with JWT bearer tokens in the future.
+## Processing & Extraction APIs (Internal)
+- `POST /api/v1/internal/extraction/result` - Callback for Python processing service to submit structured extraction results to Spring Boot.
+- `GET /api/v1/internal/messages/{messageId}` - Endpoint for Python worker to retrieve normalized email text and metadata.
+- `POST /api/internal/gmail/messages/retrieve` - Development trigger to fetch and persist raw Gmail message.
+- `POST /api/internal/gmail/history/sync` - Development trigger for History API synchronization.

@@ -9,8 +9,8 @@ PlacementOS is an event-driven placement workflow platform that automatically pr
 ## Architecture
 
 PlacementOS uses a distributed architecture designed for scalability and clear separation of concerns:
-- **Spring Boot**: Core business platform, managing student state, placements, and eligibility logic.
-- **Python (FastAPI)**: Independent service dedicated to parsing Excel, PDF, and DOCX files, along with AI-assisted text extraction (deferred to future milestone).
+- **Spring Boot**: Core business platform, managing student state, placements, placement roles, and eligibility logic.
+- **Python (FastAPI)**: Stateless processing service dedicated to email classification, deterministic text extraction, LLM fallback parsing, and future PDF/Excel/OCR file parsing.
 - **PostgreSQL**: System of record (Hosted on Neon PostgreSQL).
 - **Redis Streams**: Message broker and durable async stream queue.
 - **Next.js**: Frontend application.
@@ -39,6 +39,9 @@ To run the application locally, you must provide your own Neon PostgreSQL and Re
 - **Gmail Integration**: OAuth 2.0 (`gmail.readonly`) with AES-256-GCM encrypted refresh token storage.
 - **Pub/Sub Webhook**: Google-signed JWT authenticated push endpoint for mailbox synchronization.
 - **History Synchronization**: Synchronous Gmail History API pagination and discovery idempotency.
-- **Redis Streams Event Foundation**: Durable `GMAIL_MESSAGE_DISCOVERED` events published to `placementos:events:stream` with consumer groups.
+- **Redis Streams Event Foundation**: Durable `GMAIL_MESSAGE_DISCOVERED` and `GMAIL_MESSAGE_RETRIEVED` events published to `placementos:events:stream` with consumer groups.
 - **Message Retrieval & MIME Normalization**: Recursively extracts plain text, HTML, and attachment metadata from Gmail messages without loading heavy binaries.
-- **Durable Persistence**: `gmail_messages` and evolved `attachments` metadata records stored in PostgreSQL.
+- **Durable Message Persistence**: `gmail_messages` and evolved `attachments` metadata records stored in PostgreSQL.
+- **Placement Email Classification**: Deterministic classification engine identifying placement vs. non-placement emails with confidence scoring.
+- **Structured Multi-Role Extraction**: Extracts company, drive title, multiple roles (`PlacementRole`), common drive-level eligibility, role-specific eligibility, deadlines, and important dates with strict schema validation.
+- **Idempotent Ingestion**: Spring Boot `PlacementIngestionService` validates extraction results and idempotently persists placement opportunities in PostgreSQL.

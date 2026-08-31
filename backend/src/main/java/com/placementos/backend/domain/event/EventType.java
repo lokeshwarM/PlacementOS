@@ -14,5 +14,16 @@ public enum EventType {
      * Signals that a new incoming placement email has been discovered via the Gmail History API.
      * Sent to Redis to queue the email for processing.
      */
-    GMAIL_MESSAGE_DISCOVERED
+    GMAIL_MESSAGE_DISCOVERED,
+
+    /**
+     * Signals that a raw Gmail message has been retrieved, MIME-normalized, and durably persisted.
+     * Triggers downstream classification and extraction processing.
+     */
+    GMAIL_MESSAGE_RETRIEVED,
+
+    /**
+     * Signals that a placement email has been classified and its structured information extracted.
+     */
+    PLACEMENT_EXTRACTED
 }

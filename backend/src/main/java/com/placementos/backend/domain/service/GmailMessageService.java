@@ -36,17 +36,25 @@ public class GmailMessageService {
     private final GmailMimeNormalizer mimeNormalizer;
     private final GmailMessageRepository gmailMessageRepository;
     private final ProcessedEmailService processedEmailService;
+    private final org.springframework.data.redis.core.RedisTemplate<String, Object> redisTemplate;
+    private final tools.jackson.databind.ObjectMapper objectMapper;
+
+    public static final String REDIS_STREAM_KEY = "placementos:events:stream";
 
     public GmailMessageService(GmailSourceRepository sourceRepository,
                                GmailOAuthService oauthService,
                                GmailMimeNormalizer mimeNormalizer,
                                GmailMessageRepository gmailMessageRepository,
-                               ProcessedEmailService processedEmailService) {
+                               ProcessedEmailService processedEmailService,
+                               org.springframework.data.redis.core.RedisTemplate<String, Object> redisTemplate,
+                               tools.jackson.databind.ObjectMapper objectMapper) {
         this.sourceRepository = sourceRepository;
         this.oauthService = oauthService;
         this.mimeNormalizer = mimeNormalizer;
         this.gmailMessageRepository = gmailMessageRepository;
         this.processedEmailService = processedEmailService;
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -149,6 +157,41 @@ public class GmailMessageService {
 
         // 6. Update processed_emails state
         processedEmailService.markRetrieved(messageId);
+
+        // 7. Publish GMAIL_MESSAGE_RETRIEVED to Redis Stream for downstream processing
+        try {
+            com.placementos.backend.domain.event.payload.GmailMessageRetrievedPayload payload =
+                    new com.placementos.backend.domain.event.payload.GmailMessageRetrievedPayload(
+                            messageId,
+                            saved.getThreadId(),
+                            sourceEmail,
+                            saved.getSubject(),
+                            saved.getSender(),
+                            saved.getSnippet()
+                    );
+            com.placementos.backend.domain.event.EventEnvelope<com.placementos.backend.domain.event.payload.GmailMessageRetrievedPayload> event =
+                    new com.placementos.backend.domain.event.EventEnvelope<>(
+                            com.placementos.backend.domain.event.EventType.GMAIL_MESSAGE_RETRIEVED,
+                            "gmail-message-service",
+                            payload
+                    );
+
+            java.util.Map<String, String> streamRecord = new java.util.HashMap<>();
+            streamRecord.put("eventType", event.getEventType().name());
+            streamRecord.put("eventId", event.getEventId());
+            streamRecord.put("timestamp", event.getTimestamp());
+            streamRecord.put("source", event.getSource());
+            streamRecord.put("payload", objectMapper.writeValueAsString(payload));
+
+            redisTemplate.opsForStream().add(
+                    org.springframework.data.redis.connection.stream.StreamRecords.newRecord()
+                            .in(REDIS_STREAM_KEY)
+                            .ofMap(streamRecord)
+            );
+            log.debug("Published GMAIL_MESSAGE_RETRIEVED to stream {} for message {}", REDIS_STREAM_KEY, messageId);
+        } catch (Exception e) {
+            log.warn("Failed to publish GMAIL_MESSAGE_RETRIEVED to Redis Stream for message {}. Processing can continue on-demand.", messageId, e);
+        }
 
         log.info("Successfully retrieved and persisted Gmail message {} for source {} with {} attachments.",
                 messageId, sourceEmail, saved.getAttachments().size());

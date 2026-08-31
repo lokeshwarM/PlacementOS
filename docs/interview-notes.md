@@ -188,3 +188,37 @@ Why not store attachment binaries in PostgreSQL?
 
 **Answer:**
 Large binary objects bloat database storage, impact backup performance, and increase memory footprint. The database stores attachment metadata and future storage references, while the binary files will be stored in an object store (e.g. S3 / GCS).
+
+---
+
+### Placement Classification & Structured Extraction
+
+**Question:**
+How do you handle a company with multiple roles?
+
+**Answer:**
+The placement drive is modeled separately from `PlacementRole` records. Each role can carry role-specific eligibility while shared criteria remains at the drive level.
+
+**Question:**
+How do you handle common and role-specific eligibility?
+
+**Answer:**
+Common eligibility applies to the drive (`placement_drives.eligibility_criteria`), while additional constraints are attached to the relevant role (`placement_roles.eligibility_criteria`). The later eligibility engine combines both.
+
+**Question:**
+Why not let the LLM directly create database records?
+
+**Answer:**
+LLM output is probabilistic. It first passes through a strict structured schema and validation boundary in Python before Spring Boot persists trusted business state in PostgreSQL.
+
+**Question:**
+Why deterministic extraction before AI?
+
+**Answer:**
+Predictable email structures can be parsed more cheaply and reproducibly. AI is reserved for ambiguous or irregular layouts.
+
+**Question:**
+What happens when eligibility is missing?
+
+**Answer:**
+The system preserves the field as unspecified/null rather than inventing a restriction.

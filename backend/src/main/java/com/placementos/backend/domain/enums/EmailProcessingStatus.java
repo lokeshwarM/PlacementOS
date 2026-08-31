@@ -9,6 +9,8 @@ public enum EmailProcessingStatus {
     DISCOVERED,
     QUEUED,
     RETRIEVED,
+    EXTRACTED,
+    NON_PLACEMENT,
     PROCESSED,
     FAILED,
     DUPLICATE

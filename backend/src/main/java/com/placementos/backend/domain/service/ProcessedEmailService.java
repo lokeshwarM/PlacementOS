@@ -98,6 +98,30 @@ public class ProcessedEmailService {
     }
 
     /**
+     * Marks an email as classified and extracted.
+     */
+    @Transactional
+    public void markExtracted(String messageId) {
+        ProcessedEmail entry = processedEmailRepository.findByMessageId(messageId)
+                .orElseThrow(() -> new IllegalStateException("Cannot mark extracted: message ID not found - " + messageId));
+        entry.setProcessingStatus(EmailProcessingStatus.EXTRACTED);
+        entry.setErrorMessage(null);
+        processedEmailRepository.save(entry);
+    }
+
+    /**
+     * Marks an email as classified as NON_PLACEMENT.
+     */
+    @Transactional
+    public void markNonPlacement(String messageId, String reason) {
+        ProcessedEmail entry = processedEmailRepository.findByMessageId(messageId)
+                .orElseThrow(() -> new IllegalStateException("Cannot mark non-placement: message ID not found - " + messageId));
+        entry.setProcessingStatus(EmailProcessingStatus.NON_PLACEMENT);
+        entry.setErrorMessage(reason);
+        processedEmailRepository.save(entry);
+    }
+
+    /**
      * Marks an existing discovered/queued email as failed.
      */
     @Transactional

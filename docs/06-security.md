@@ -89,3 +89,9 @@ Google Cloud Pub/Sub pushes Gmail notifications to a dedicated webhook (`/api/in
 - **Operational Logging Rule**: Raw email bodies, HTML, and attachment binaries are **NEVER logged** to application logs or console output.
 - **HTML Security**: Stored HTML bodies are treated as raw data only. They must never be rendered blindly in administrative or frontend views without sanitization to prevent Cross-Site Scripting (XSS).
 - **Binary Data Boundary**: Large binary files are never stored in PostgreSQL or passed across Redis Streams. Only file metadata (filename, content type, attachmentId, size) is recorded in PostgreSQL.
+
+## AI Processing & Service Isolation Boundary
+
+- **No Direct Database Access**: The Python processing service has **zero direct access** to PostgreSQL business tables or database credentials.
+- **No Direct Gmail Access**: Python has no access to Google OAuth refresh tokens or Gmail APIs. It only operates on normalized payloads provided by Spring Boot.
+- **Strict Schema Validation**: Probabilistic AI/LLM outputs must pass strict Pydantic validation before being sent to Spring Boot, and Spring Boot strictly validates required fields (e.g., non-blank company name, confidence threshold) before writing to PostgreSQL.
