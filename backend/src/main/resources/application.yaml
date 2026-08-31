@@ -27,6 +27,17 @@ app:
       client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET}
       redirect-uri: http://localhost:8080/api/internal/gmail/oauth2/callback
       encryption-key: ${GMAIL_TOKEN_ENCRYPTION_KEY:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=}
+    pubsub:
+      # The Pub/Sub topic to register with Gmail users.watch()
+      # Format: projects/{PROJECT_ID}/topics/{TOPIC_NAME}
+      topic: ${GMAIL_PUBSUB_TOPIC:projects/placeholder-project/topics/gmail-notifications}
+      # The public HTTPS URL configured as the Pub/Sub subscription's push endpoint.
+      # This value is also used as the expected audience when validating push JWTs.
+      # Must NOT be localhost in production — must be the actual deployed HTTPS URL.
+      push-endpoint: ${GMAIL_PUBSUB_PUSH_ENDPOINT:https://placeholder.example.com/api/internal/gmail/pubsub/push}
+      # The service account email configured as the push authentication identity.
+      # Must match the email in the Google-signed JWT attached to each push delivery.
+      expected-service-account-email: ${GMAIL_PUBSUB_SERVICE_ACCOUNT_EMAIL:placeholder-sa@placeholder-project.iam.gserviceaccount.com}
 
 logging:
   level:

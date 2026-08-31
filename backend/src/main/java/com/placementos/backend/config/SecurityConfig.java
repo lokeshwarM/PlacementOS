@@ -40,9 +40,18 @@ public class SecurityConfig {
                 // e.g. .requestMatchers("/api/v1/students/**").hasRole("STUDENT")
                 .requestMatchers("/api/v1/**").permitAll()
                 
-                // Internal development/admin endpoint for Gmail OAuth
-                // In production, this should be restricted to ADMINs or secured via VPN/IAP
+                // Internal endpoint for Gmail OAuth source registration (authorize + callback).
+                // In production, restrict to ADMIN role or VPN/IAP.
                 .requestMatchers("/api/internal/gmail/oauth2/**").permitAll()
+                
+                // Pub/Sub authenticated push endpoint.
+                // Spring Security permits this URL at the network level, but the endpoint
+                // itself performs its own authentication: it validates the Google-signed JWT
+                // in the Authorization header (signature, issuer, expiry, audience, and
+                // expected service-account identity) before processing any request body.
+                // This is NOT a public endpoint — it is secured by Google's push JWT mechanism.
+                // IMPORTANT: Only this specific path is permitted, NOT /api/internal/gmail/**
+                .requestMatchers("/api/internal/gmail/pubsub/push").permitAll()
                 
                 // Any other unmapped requests should be authenticated (fail-safe)
                 .anyRequest().authenticated()
