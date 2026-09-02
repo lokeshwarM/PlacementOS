@@ -1,7 +1,9 @@
 package com.placementos.backend.config;
 
 import com.placementos.backend.domain.entity.Student;
+import com.placementos.backend.domain.entity.UserAccount;
 import com.placementos.backend.domain.repository.StudentRepository;
+import com.placementos.backend.domain.repository.UserAccountRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
@@ -22,9 +24,12 @@ public class AuthenticatedStudentProvider {
     private static final Logger log = LoggerFactory.getLogger(AuthenticatedStudentProvider.class);
 
     private final StudentRepository studentRepository;
+    private final UserAccountRepository userAccountRepository;
 
-    public AuthenticatedStudentProvider(StudentRepository studentRepository) {
+    public AuthenticatedStudentProvider(StudentRepository studentRepository,
+                                       UserAccountRepository userAccountRepository) {
         this.studentRepository = studentRepository;
+        this.userAccountRepository = userAccountRepository;
     }
 
     /**
@@ -41,7 +46,7 @@ public class AuthenticatedStudentProvider {
 
         String principalName = auth.getName();
         return resolveStudentByPrincipalName(principalName)
-                .orElseThrow(() -> new AccessDeniedException("No registered student matches authenticated principal: " + principalName));
+                .orElseThrow(() -> new AccessDeniedException("No student record linked to authenticated user: " + principalName));
     }
 
     /**
@@ -53,7 +58,27 @@ public class AuthenticatedStudentProvider {
         }
 
         return resolveStudentByPrincipalName(principal.getName())
-                .orElseThrow(() -> new AccessDeniedException("No registered student matches principal: " + principal.getName()));
+                .orElseThrow(() -> new AccessDeniedException("No student record linked to principal: " + principal.getName()));
+    }
+
+    /**
+     * Resolves user account from an explicit Principal object.
+     */
+    public UserAccount getUserAccountFromPrincipal(Principal principal) {
+        String identifier = (principal != null && principal.getName() != null) ? principal.getName() : null;
+        if (identifier == null) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                identifier = auth.getName();
+            }
+        }
+
+        if (identifier == null) {
+            throw new AccessDeniedException("User is not authenticated");
+        }
+
+        return userAccountRepository.findByEmail(identifier)
+                .orElseThrow(() -> new AccessDeniedException("No user account found for principal: " + identifier));
     }
 
     /**
@@ -76,20 +101,26 @@ public class AuthenticatedStudentProvider {
             return Optional.empty();
         }
 
-        // 1. Try by numeric ID
+        // 1. First check if it's a UserAccount email with a linked Student
+        Optional<UserAccount> userOpt = userAccountRepository.findByEmail(identifier);
+        if (userOpt.isPresent() && userOpt.get().getStudent() != null) {
+            return Optional.of(userOpt.get().getStudent());
+        }
+
+        // 2. Try by numeric student ID (for test mocks / internal callers)
         try {
             Long id = Long.parseLong(identifier);
             Optional<Student> studentById = studentRepository.findById(id);
             if (studentById.isPresent()) return studentById;
         } catch (NumberFormatException ignored) {
-            // Not a numeric ID, continue to other lookups
+            // Not a numeric ID
         }
 
-        // 2. Try by registration number
+        // 3. Try by registration number
         Optional<Student> studentByReg = studentRepository.findByRegistrationNumber(identifier);
         if (studentByReg.isPresent()) return studentByReg;
 
-        // 3. Try by NeoPAT ID
+        // 4. Try by NeoPAT ID
         return studentRepository.findByNeopatId(identifier);
     }
 }

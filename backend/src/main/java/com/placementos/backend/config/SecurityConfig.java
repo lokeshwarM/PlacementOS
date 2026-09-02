@@ -1,20 +1,36 @@
 package com.placementos.backend.config;
 
+import com.placementos.backend.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -22,11 +38,14 @@ public class SecurityConfig {
             // Stateless API design - no HTTP sessions
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
-            // Disable CSRF because this is a stateless API (tokens will be used eventually, not cookies)
+            // Disable CSRF because this is a stateless API with JWT tokens
             .csrf(AbstractHttpConfigurer::disable)
             
             // Configure CORS
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            
+            // Add JWT filter
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             
             // Authorization rules
             .authorizeHttpRequests(auth -> auth
@@ -35,25 +54,22 @@ public class SecurityConfig {
                 // Deny all other actuator endpoints
                 .requestMatchers("/actuator/**").denyAll()
                 
-                // Temporarily permit all API requests during this development milestone.
-                // In a future milestone, this will be restricted with JWT/OIDC role checks.
-                // e.g. .requestMatchers("/api/v1/students/**").hasRole("STUDENT")
-                .requestMatchers("/api/v1/**").permitAll()
+                // Public authentication endpoints
+                .requestMatchers("/api/v1/auth/**").permitAll()
                 
-                // Internal endpoint for Gmail OAuth source registration (authorize + callback).
-                // In production, restrict to ADMIN role or VPN/IAP.
-                .requestMatchers("/api/internal/gmail/oauth2/**").permitAll()
+                // Student portal endpoints require authentication
+                .requestMatchers("/api/v1/student/**").authenticated()
                 
-                // Pub/Sub authenticated push endpoint.
-                // Spring Security permits this URL at the network level, but the endpoint
-                // itself performs its own authentication: it validates the Google-signed JWT
-                // in the Authorization header (signature, issuer, expiry, audience, and
-                // expected service-account identity) before processing any request body.
-                // This is NOT a public endpoint — it is secured by Google's push JWT mechanism.
-                // IMPORTANT: Only this specific path is permitted, NOT /api/internal/gmail/**
+                // Pub/Sub authenticated push webhook
                 .requestMatchers("/api/internal/gmail/pubsub/push").permitAll()
                 
-                // Any other unmapped requests should be authenticated (fail-safe)
+                // Internal endpoints for Gmail OAuth registration
+                .requestMatchers("/api/internal/gmail/oauth2/**").permitAll()
+                
+                // All other API endpoints
+                .requestMatchers("/api/v1/**").permitAll()
+                
+                // Any other unmapped requests must be authenticated
                 .anyRequest().authenticated()
             );
 
@@ -61,19 +77,14 @@ public class SecurityConfig {
     }
 
     /**
-     * Define strict CORS behavior. 
-     * In a real production scenario, origins should be injected via environment variables.
-     * We avoid using wildcard allowedOrigins("*") for security reasons.
+     * Define strict CORS behavior for Next.js frontend.
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        // Define specific allowed origins. E.g., Next.js frontend running locally
-        configuration.setAllowedOrigins(List.of("http://localhost:3000")); 
-        
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000")); 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Internal-Service-Key"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L); // 1 hour cache
 
