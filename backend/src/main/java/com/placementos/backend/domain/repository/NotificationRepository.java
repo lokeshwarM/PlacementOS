@@ -17,6 +17,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     List<Notification> findByStudentId(Long studentId);
 
+    org.springframework.data.domain.Page<Notification> findByStudentId(Long studentId, org.springframework.data.domain.Pageable pageable);
+
+    org.springframework.data.domain.Page<Notification> findByStudentIdAndNotificationType(
+            Long studentId, com.placementos.backend.domain.enums.NotificationType notificationType, org.springframework.data.domain.Pageable pageable);
+
     List<Notification> findByPlacementDriveId(Long placementDriveId);
 
     List<Notification> findByStudentIdAndPlacementDriveId(Long studentId, Long placementDriveId);

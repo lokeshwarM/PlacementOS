@@ -21,6 +21,8 @@ public interface ReminderTaskRepository extends JpaRepository<ReminderTask, Long
 
     List<ReminderTask> findByStudentId(Long studentId);
 
+    org.springframework.data.domain.Page<ReminderTask> findByStudentId(Long studentId, org.springframework.data.domain.Pageable pageable);
+
     List<ReminderTask> findByStatus(ReminderStatus status);
 
     @Query("SELECT r FROM ReminderTask r WHERE r.status = :status AND r.scheduledFor <= :now ORDER BY r.scheduledFor ASC")

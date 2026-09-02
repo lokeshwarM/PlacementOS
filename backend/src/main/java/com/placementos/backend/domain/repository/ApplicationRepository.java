@@ -17,6 +17,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     List<Application> findByStudentId(Long studentId);
 
+    org.springframework.data.domain.Page<Application> findByStudentId(Long studentId, org.springframework.data.domain.Pageable pageable);
+
     List<Application> findByPlacementDriveId(Long placementDriveId);
 
     List<Application> findByPlacementRoleId(Long placementRoleId);
