@@ -109,3 +109,10 @@ Google Cloud Pub/Sub pushes Gmail notifications to a dedicated webhook (`/api/in
 - **Internal Service Key Authentication**: The internal endpoint `GET /api/v1/internal/attachments/{id}/content` is protected by `X-Internal-Service-Key` and is never exposed publicly.
 - **File Size Limits**: Ingestion enforces a strict maximum file size limit (25MB) to prevent Denial-of-Service.
 - **Privacy in Logs**: Raw document contents, candidate tables, and personal identifiers from shortlist files are excluded from application logs. Only safe metadata (attachment ID, candidate count, match status) is logged.
+
+## Principal-Derived Student Identity (Anti-Impersonation Boundary)
+
+- **Zero Parameter Impersonation**: Student-facing endpoints (`POST /api/v1/applications/{id}/apply`, `GET /api/v1/applications/my`, `GET /api/v1/notifications/my`, `GET /api/v1/reminders/my`, `POST /api/v1/reminders/{id}/stop`) **never** trust a client-supplied query parameter (such as `?studentId=123`).
+- **Principal Derivation**: The student's identity is resolved directly from the authenticated `SecurityContext` / `Principal` via `AuthenticatedStudentProvider`.
+- **Cross-Student Access Prevention**: When an authenticated student interacts with an application, reminder, or notification, the service layer strictly verifies ownership (`app.getStudent().getId().equals(authenticatedStudent.getId())`) and throws `AccessDeniedException` (HTTP 403 Forbidden) if a student attempts to access or modify another student's record.
+- **WhatsApp Isolation**: No live external WhatsApp credentials are baked into the codebase; all delivery operations in development and testing route through `MockWhatsAppNotificationProvider`.

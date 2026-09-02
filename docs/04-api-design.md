@@ -26,9 +26,12 @@ OpenAPI documentation (Swagger UI) is **intentionally deferred** as per mileston
 - `PUT /api/v1/placements/{id}` - Update a placement drive
 
 ## Application APIs
-- `POST /api/v1/applications` - Create an application (Apply to a drive)
-- `GET /api/v1/applications/{id}` - Get application by ID
+- `POST /api/v1/applications` - Create an application (Admin / manual creation)
+- `POST /api/v1/applications/{id}/apply` - Explicit student apply action (principal-derived student identity, records applied timestamp, cancels active reminders & pending outbox rows)
+- `GET /api/v1/applications/my` - Get applications for the currently authenticated student
+- `GET /api/v1/applications/{id}` - Get application by ID (enforces student ownership)
 - `GET /api/v1/applications/lookup?studentId={id}&placementDriveId={id}` - Look up an application
+- `POST /api/v1/applications/reconcile?driveId={id}&preferredRoleId={id}` - Idempotently reconcile student application state against eligibility results and shortlist outcomes
 
 ## Shortlist APIs
 - `GET /api/v1/placements/{placementId}/shortlists` - Get shortlists for a drive
@@ -37,11 +40,16 @@ OpenAPI documentation (Swagger UI) is **intentionally deferred** as per mileston
 - `GET /api/v1/shortlists/name/{name}` - Get shortlists by name
 
 ## Notification APIs
-- `GET /api/v1/notifications/student/{studentId}` - Get all notification states for a student
+- `GET /api/v1/notifications/my` - Get notification history for the currently authenticated student
+- `GET /api/v1/notifications/student/{studentId}` - Get all notification states for a student (admin / verified ownership)
+- `POST /api/v1/notifications/internal/outbox/process` - Internal trigger to drain transactional outbox records
 
 ## Reminder APIs
-- `GET /api/v1/reminders/student/{studentId}` - Get all reminders for a student
+- `GET /api/v1/reminders/my` - Get active and historical reminders for the currently authenticated student
+- `GET /api/v1/reminders/student/{studentId}` - Get all reminders for a student (admin / verified ownership)
+- `POST /api/v1/reminders/{id}/stop` - Explicit action to cancel a reminder task and pending outbox rows
 - `POST /api/v1/reminders/{id}/complete` - Mark a reminder as completed
+- `POST /api/v1/reminders/process-due` - Internal trigger to evaluate and schedule due reminder tasks
 
 ## Eligibility APIs
 - `POST /api/v1/eligibility/students/{studentId}/drives/{driveId}` - Evaluates and persists eligibility for all roles in a drive

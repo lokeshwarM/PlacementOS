@@ -467,3 +467,63 @@ Use structured document classifications rather than assuming every attachment is
 Placement emails commonly contain eligibility documents, job descriptions, recruitment instructions and shortlists in the same message.
 ### Trade-off
 Requires document classification before shortlist extraction.
+
+---
+
+## D-055
+### Decision
+Adopt the Transactional Outbox pattern (`notification_outbox` table) for all notification dispatches.
+### Reason
+Guarantees atomic consistency between business domain state transitions (e.g. eligibility decisions, shortlist ingestion, explicit application status changes) and notification dispatch intent without dual-write race conditions.
+### Trade-off
+Requires an asynchronous worker loop to drain and deliver pending outbox records.
+
+---
+
+## D-056
+### Decision
+Replace rigid composite unique constraint `(student, drive, type, channel)` with a deterministic, structured `idempotency_key` column (`uq_notifications_idempotency_key`).
+### Reason
+The composite constraint prevented legitimate recurring reminders (such as hourly deadline countdowns) for the same student and drive over WhatsApp. Structured idempotency keys (e.g. `reminder:task:12:slot:2`) allow fine-grained idempotency.
+### Trade-off
+Requires explicit key construction in the decision engine.
+
+---
+
+## D-057
+### Decision
+Enforce Principal-derived student identity resolution for all student-facing endpoints; forbid client-supplied `?studentId=` parameters.
+### Reason
+Prevents student parameter impersonation where a student could forge or tamper with another student's application, notification history, or reminder state.
+### Trade-off
+Requires authenticated SecurityContext / Principal resolution in controller and service layers.
+
+---
+
+## D-058
+### Decision
+Enforce strict application state reconciliation non-regression semantics: authoritative forward states (`APPLIED`, `SHORTLISTED`, `COMPLETED`, `REJECTED`) are never demoted back to `ELIGIBLE` or `NOT_ELIGIBLE`.
+### Reason
+Automatic eligibility re-evaluations must never overwrite an explicit student application submission or an authoritative shortlist confirmation.
+### Trade-off
+State reconciliation logic must explicitly inspect existing application status before computing updates.
+
+---
+
+## D-059
+### Decision
+Isolate WhatsApp integration behind a provider interface (`WhatsAppNotificationProvider`) backed by a thread-safe `MockWhatsAppNotificationProvider`.
+### Reason
+Prevents unintended external network calls and cost/rate-limit exposure during development and automated testing while keeping the system architecture production-ready for live API integration.
+### Trade-off
+Live external WhatsApp delivery remains simulated until production provider credentials are intentionally deployed.
+
+---
+
+## D-060
+### Decision
+Implement active stop-on-apply/done semantics that immediately cancel pending `ReminderTask`s and pending `NotificationOutbox` rows upon explicit application submission.
+### Reason
+Students who have already submitted their application must not continue receiving intrusive deadline reminder messages.
+### Trade-off
+Application submission transactions must coordinate reminder deactivation and outbox row cancellation.

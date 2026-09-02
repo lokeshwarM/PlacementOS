@@ -251,55 +251,89 @@ Indexes: `placement_drive_id`, `student_id`, `placement_role_id`, `match_status`
 ---
 
 ### applications
-Tracks an individual student's state for a placement drive.
+Tracks an individual student's state for a placement drive or specific role.
 
 | Field              | Type        | Notes                                           |
 |--------------------|-------------|-------------------------------------------------|
 | id                 | BIGSERIAL   | Primary Key                                     |
-| student_id         | BIGINT      | FK → students                                   |
-| placement_drive_id | BIGINT      | FK → placement_drives                           |
+| student_id         | BIGINT      | FK → students, NOT NULL                         |
+| placement_drive_id | BIGINT      | FK → placement_drives, NOT NULL                 |
+| placement_role_id  | BIGINT      | FK → placement_roles, nullable (role context)   |
 | status             | VARCHAR(50) | NOT_STARTED / ELIGIBLE / NOT_ELIGIBLE / APPLIED / SHORTLISTED / REJECTED / COMPLETED |
-| applied_at         | TIMESTAMPTZ | Nullable                                        |
+| applied_at         | TIMESTAMPTZ | Nullable (timestamp when student marked applied)|
 | created_at         | TIMESTAMPTZ | UTC, NOT NULL                                   |
 | updated_at         | TIMESTAMPTZ | UTC, NOT NULL                                   |
 
 Unique constraint: `(student_id, placement_drive_id)`
-Indexes: `student_id`, `placement_drive_id`
+Indexes: `student_id`, `placement_drive_id`, `placement_role_id`
 
 ---
 
 ### notifications
-Tracks personalised notifications dispatched to students.
+Tracks personalised notifications dispatched to students with durable idempotency.
 
-| Field              | Type        | Notes                                        |
-|--------------------|-------------|----------------------------------------------|
-| id                 | BIGSERIAL   | Primary Key                                  |
-| student_id         | BIGINT      | FK → students                                |
-| placement_drive_id | BIGINT      | FK → placement_drives                        |
-| notification_type  | VARCHAR(50) | ELIGIBILITY / SHORTLIST / DEADLINE / REMINDER|
-| channel            | VARCHAR(50) | WHATSAPP / TELEGRAM / EMAIL / IN_APP         |
-| status             | VARCHAR(50) | PENDING / SENT / FAILED / SKIPPED            |
-| sent_at            | TIMESTAMPTZ | Nullable                                     |
-| created_at         | TIMESTAMPTZ | UTC, NOT NULL                                |
+| Field              | Type         | Notes                                        |
+|--------------------|--------------|----------------------------------------------|
+| id                 | BIGSERIAL    | Primary Key                                  |
+| idempotency_key    | VARCHAR(255) | **UNIQUE**, NOT NULL (deterministic key)     |
+| student_id         | BIGINT       | FK → students, NOT NULL                      |
+| placement_drive_id | BIGINT       | FK → placement_drives, NOT NULL              |
+| placement_role_id  | BIGINT       | FK → placement_roles, nullable               |
+| notification_type  | VARCHAR(50)  | ELIGIBILITY / SHORTLIST / DEADLINE / REMINDER|
+| channel            | VARCHAR(50)  | WHATSAPP / TELEGRAM / EMAIL / IN_APP         |
+| status             | VARCHAR(50)  | PENDING / SENT / FAILED / SKIPPED            |
+| message_payload    | TEXT         | Rendered message body, nullable              |
+| sent_at            | TIMESTAMPTZ  | Nullable                                     |
+| created_at         | TIMESTAMPTZ  | UTC, NOT NULL                                |
 
-Unique constraint: `(student_id, placement_drive_id, notification_type, channel)`
-Indexes: `student_id`, `placement_drive_id`, `status`
+Unique constraint: `(idempotency_key)`
+Indexes: `idempotency_key`, `student_id`, `placement_drive_id`, `placement_role_id`, `(student_id, placement_drive_id)`
+
+---
+
+### notification_outbox
+Transactional outbox table ensuring atomic consistency between business events and asynchronous message dispatches.
+
+| Field              | Type         | Notes                                        |
+|--------------------|--------------|----------------------------------------------|
+| id                 | BIGSERIAL    | Primary Key                                  |
+| notification_id    | BIGINT       | FK → notifications(id) ON DELETE CASCADE     |
+| idempotency_key    | VARCHAR(255) | **UNIQUE**, NOT NULL                         |
+| status             | VARCHAR(50)  | PENDING / PROCESSING / SENT / FAILED / RETRYING / CANCELLED |
+| channel            | VARCHAR(50)  | WHATSAPP / TELEGRAM / EMAIL / IN_APP         |
+| recipient          | VARCHAR(255) | Destination phone number / email             |
+| payload            | TEXT         | Serialized message text                      |
+| attempt_count      | INTEGER      | Default 0                                    |
+| max_attempts       | INTEGER      | Default 3                                    |
+| available_at       | TIMESTAMPTZ  | Next eligible processing time                |
+| processed_at       | TIMESTAMPTZ  | Nullable                                     |
+| last_error         | TEXT         | Nullable — failure details                   |
+| created_at         | TIMESTAMPTZ  | UTC, NOT NULL                                |
+| updated_at         | TIMESTAMPTZ  | UTC, NOT NULL                                |
+
+Indexes: `(status, available_at)`, `notification_id`, `idempotency_key`
 
 ---
 
 ### reminder_tasks
-Represents a scheduled deadline reminder.
+Represents scheduled recurring deadline reminders with stop-on-apply lifecycle management.
 
-| Field              | Type        | Notes                                     |
-|--------------------|-------------|-------------------------------------------|
-| id                 | BIGSERIAL   | Primary Key                               |
-| student_id         | BIGINT      | FK → students                             |
-| placement_drive_id | BIGINT      | FK → placement_drives                     |
-| scheduled_for      | TIMESTAMPTZ | NOT NULL                                  |
-| status             | VARCHAR(50) | PENDING / COMPLETED / CANCELLED / FAILED  |
-| completed_at       | TIMESTAMPTZ | Nullable                                  |
-| created_at         | TIMESTAMPTZ | UTC, NOT NULL                             |
-| updated_at         | TIMESTAMPTZ | UTC, NOT NULL                             |
+| Field              | Type         | Notes                                     |
+|--------------------|--------------|-------------------------------------------|
+| id                 | BIGSERIAL    | Primary Key                               |
+| student_id         | BIGINT       | FK → students, NOT NULL                   |
+| placement_drive_id | BIGINT       | FK → placement_drives, NOT NULL           |
+| placement_role_id  | BIGINT       | FK → placement_roles, nullable            |
+| scheduled_for      | TIMESTAMPTZ  | Next occurrence timestamp, NOT NULL       |
+| interval_minutes   | INTEGER      | Recurrence interval (default 60 mins)     |
+| max_reminders      | INTEGER      | Maximum reminder iterations (default 5)   |
+| reminders_sent     | INTEGER      | Count of sent reminder iterations         |
+| cancel_reason      | VARCHAR(255) | STUDENT_APPLIED / DEADLINE_PASSED / etc.  |
+| last_reminder_at   | TIMESTAMPTZ  | Nullable                                  |
+| status             | VARCHAR(50)  | PENDING / COMPLETED / CANCELLED / FAILED  |
+| completed_at       | TIMESTAMPTZ  | Nullable                                  |
+| created_at         | TIMESTAMPTZ  | UTC, NOT NULL                             |
+| updated_at         | TIMESTAMPTZ  | UTC, NOT NULL                             |
 
 Unique constraint: `(student_id, placement_drive_id)`
-**Note/Limitation:** This constraint currently limits scheduling multiple reminders (e.g., 13:00, 14:00) for the same student and drive. This schema is intentionally retained for now and will be addressed when the full reminder scheduling model is designed.
+Indexes: `(status, scheduled_for)`, `placement_role_id`

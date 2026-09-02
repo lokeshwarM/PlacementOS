@@ -67,16 +67,36 @@ Attachment Acquisition & Document Processing:
 
 ↓
 
-Notification Queue (Redis — Future Milestone)
+Application State Reconciliation (`ApplicationStateReconciliationService`):
+  1. Combines Eligibility Decisions, Shortlist Outcomes, and Current Application State
+  2. Enforces non-regression: `APPLIED`, `SHORTLISTED`, `COMPLETED`, `REJECTED` never demote to `ELIGIBLE` / `NOT_ELIGIBLE`
+  3. Never auto-applies on eligibility/shortlist (requires explicit student apply action)
 
 ↓
 
-Student Notification (Future Milestone)
+Notification Decision Engine (`NotificationDecisionService`):
+  1. Deterministic evaluation for `ELIGIBILITY`, `SHORTLIST`, `DEADLINE`, `REMINDER`
+  2. Computes structured `idempotency_key` (e.g. `eligibility:student:1:drive:10`, `reminder:task:5:slot:2`)
+  3. Renders templates deterministically (`MessageTemplateService`)
+  4. Atomically persists `Notification` and `NotificationOutbox` in PostgreSQL within the same business transaction
+
+↓
+
+Transactional Outbox & Delivery Worker (`NotificationOutboxService` & `NotificationDeliveryWorker`):
+  1. Concurrency-safe claiming of due outbox records
+  2. Dispatches to `WhatsAppNotificationProvider` (backed by testable `MockWhatsAppNotificationProvider`)
+  3. Updates delivery status (`SENT`, `RETRYING` with exponential backoff, or `FAILED`)
+
+↓
+
+Reminder Lifecycle & Stop-on-Done (`ReminderService`):
+  1. Recurring interval reminder evaluation
+  2. Immediate cancellation of active `ReminderTask`s and pending outbox rows when student explicitly applies (`POST /api/v1/applications/{id}/apply`) or deadline passes
 
 ## Distributed System Responsibility
 
-- **Spring Boot**: Core business backend and sole source of truth for all business state (students, placements, placement roles, applications, shortlists, notifications, reminders, normalized messages, attachment metadata). All persistence goes through Spring Boot.
-- **Python/FastAPI**: Stateless processing service for email classification, regex/deterministic parsing, LLM fallback extraction, and future PDF/Excel/OCR parsing. Python does NOT directly mutate business tables. All extraction results must pass through the Spring Boot API validation boundary before becoming trusted business state.
+- **Spring Boot**: Core business backend and sole source of truth for all business state (students, placements, placement roles, applications, shortlists, notifications, transactional outbox, reminders, normalized messages, attachment metadata). All persistence goes through Spring Boot.
+- **Python/FastAPI**: Stateless processing service for email classification, regex/deterministic parsing, LLM fallback extraction, document attachment classification, and Excel/PDF/DOCX candidate extraction. Python does NOT directly mutate business tables.
 - **PostgreSQL**: Persistent system of record (hosted on Neon PostgreSQL). Schema is managed by Flyway versioned migrations.
 - **Redis Streams**: Asynchronous queue infrastructure used to decouple ingestion and processing. PostgreSQL remains the sole source of truth; Redis Streams provides durable at-least-once transport.
 - **Next.js**: Frontend interface.
