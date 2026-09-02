@@ -1,4 +1,5 @@
 from typing import Optional
+# pyrefly: ignore [missing-import]
 from fastapi import FastAPI, HTTPException
 from app.models import EmailPayload, ClassificationResult, ExtractionResult
 from app.classifier import EmailClassifier
@@ -32,6 +33,7 @@ def process_email(payload: EmailPayload):
     """
     return llm_extractor.extract_with_fallback(payload)
 
+# pyrefly: ignore [missing-import]
 from fastapi import UploadFile, File, Form
 from app.models import DocumentProcessingResult
 from app.document_processor import process_document
