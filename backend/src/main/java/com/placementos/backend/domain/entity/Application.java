@@ -46,6 +46,13 @@ public class Application {
     private PlacementDrive placementDrive;
 
     /**
+     * Associated placement role (optional). Nullable for drive-level applications.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "placement_role_id")
+    private PlacementRole placementRole;
+
+    /**
      * Application lifecycle status. Stored as VARCHAR(50) with CHECK constraint.
      * @see ApplicationStatus for valid values.
      */
@@ -95,6 +102,9 @@ public class Application {
 
     public PlacementDrive getPlacementDrive() { return placementDrive; }
     public void setPlacementDrive(PlacementDrive placementDrive) { this.placementDrive = placementDrive; }
+
+    public PlacementRole getPlacementRole() { return placementRole; }
+    public void setPlacementRole(PlacementRole placementRole) { this.placementRole = placementRole; }
 
     public ApplicationStatus getStatus() { return status; }
     public void setStatus(ApplicationStatus status) { this.status = status; }

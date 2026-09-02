@@ -5,29 +5,28 @@ import com.placementos.backend.domain.enums.NotificationStatus;
 import com.placementos.backend.domain.enums.NotificationType;
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.Objects;
 
 /**
  * JPA entity for the {@code notifications} table.
- * Schema is managed by Flyway; this class is a mapping layer only.
- *
  * Tracks personalised notifications dispatched to students.
- * Idempotency at the database level is handled by a unique constraint on
- * (student_id, placement_drive_id, notification_type, channel).
- *
- * FK: student_id         → students(id)          (required, no cascade)
- * FK: placement_drive_id → placement_drives(id)  (required, no cascade)
- *
- * No notification delivery logic is implemented here.
+ * Idempotency at the database level is handled by the unique {@code idempotency_key}.
  */
 @Entity
-@Table(name = "notifications", uniqueConstraints = {
-    @UniqueConstraint(name = "uq_notifications_idempotency", columnNames = {"student_id", "placement_drive_id", "notification_type", "channel"})
-})
+@Table(
+    name = "notifications",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uq_notifications_idempotency_key", columnNames = {"idempotency_key"})
+    }
+)
 public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "idempotency_key", nullable = false, unique = true, length = 255)
+    private String idempotencyKey;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "student_id", nullable = false)
@@ -37,29 +36,24 @@ public class Notification {
     @JoinColumn(name = "placement_drive_id", nullable = false)
     private PlacementDrive placementDrive;
 
-    /**
-     * Purpose/type of notification. Stored as VARCHAR(50) with CHECK constraint.
-     * @see NotificationType for valid values.
-     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "placement_role_id")
+    private PlacementRole placementRole;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "notification_type", nullable = false, length = 50)
     private NotificationType notificationType;
 
-    /**
-     * Delivery channel. Stored as VARCHAR(50) with CHECK constraint.
-     * @see NotificationChannel for valid values.
-     */
     @Enumerated(EnumType.STRING)
     @Column(name = "channel", nullable = false, length = 50)
     private NotificationChannel channel;
 
-    /**
-     * Delivery status. Stored as VARCHAR(50) with CHECK constraint.
-     * @see NotificationStatus for valid values.
-     */
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
     private NotificationStatus status = NotificationStatus.PENDING;
+
+    @Column(name = "message_payload", columnDefinition = "TEXT")
+    private String messagePayload;
 
     @Column(name = "sent_at")
     private Instant sentAt;
@@ -68,30 +62,28 @@ public class Notification {
             columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
     private Instant createdAt;
 
-    // -------------------------------------------------------------------------
-    // Lifecycle hooks
-    // -------------------------------------------------------------------------
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) createdAt = Instant.now();
         if (status == null) status = NotificationStatus.PENDING;
     }
 
-    // -------------------------------------------------------------------------
-    // Constructors
-    // -------------------------------------------------------------------------
     public Notification() {}
 
-    // -------------------------------------------------------------------------
-    // Getters and Setters
-    // -------------------------------------------------------------------------
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getIdempotencyKey() { return idempotencyKey; }
+    public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
 
     public Student getStudent() { return student; }
     public void setStudent(Student student) { this.student = student; }
 
     public PlacementDrive getPlacementDrive() { return placementDrive; }
     public void setPlacementDrive(PlacementDrive placementDrive) { this.placementDrive = placementDrive; }
+
+    public PlacementRole getPlacementRole() { return placementRole; }
+    public void setPlacementRole(PlacementRole placementRole) { this.placementRole = placementRole; }
 
     public NotificationType getNotificationType() { return notificationType; }
     public void setNotificationType(NotificationType notificationType) { this.notificationType = notificationType; }
@@ -102,20 +94,19 @@ public class Notification {
     public NotificationStatus getStatus() { return status; }
     public void setStatus(NotificationStatus status) { this.status = status; }
 
+    public String getMessagePayload() { return messagePayload; }
+    public void setMessagePayload(String messagePayload) { this.messagePayload = messagePayload; }
+
     public Instant getSentAt() { return sentAt; }
     public void setSentAt(Instant sentAt) { this.sentAt = sentAt; }
 
     public Instant getCreatedAt() { return createdAt; }
 
-    // -------------------------------------------------------------------------
-    // equals / hashCode
-    // -------------------------------------------------------------------------
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Notification)) return false;
-        Notification other = (Notification) o;
-        return id != null && id.equals(other.id);
+        if (!(o instanceof Notification other)) return false;
+        return Objects.equals(id, other.id);
     }
 
     @Override
@@ -125,7 +116,7 @@ public class Notification {
 
     @Override
     public String toString() {
-        return "Notification{id=" + id + ", notificationType=" + notificationType
-                + ", channel=" + channel + ", status=" + status + "}";
+        return "Notification{id=" + id + ", idempotencyKey='" + idempotencyKey + '\''
+                + ", notificationType=" + notificationType + ", channel=" + channel + ", status=" + status + "}";
     }
 }

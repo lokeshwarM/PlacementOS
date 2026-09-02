@@ -3,18 +3,11 @@ package com.placementos.backend.domain.entity;
 import com.placementos.backend.domain.enums.ReminderStatus;
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.Objects;
 
 /**
  * JPA entity for the {@code reminder_tasks} table.
- * Schema is managed by Flyway; this class is a mapping layer only.
- *
- * Composite UNIQUE constraint: (student_id, placement_drive_id)
- * Prevents the same reminder being created twice for the same student+drive.
- *
- * FK: student_id         → students(id)          (required, no cascade)
- * FK: placement_drive_id → placement_drives(id)  (required, no cascade)
- *
- * No scheduler logic is implemented here.
+ * Represents a scheduled deadline reminder for a student and drive/role.
  */
 @Entity
 @Table(
@@ -38,13 +31,28 @@ public class ReminderTask {
     @JoinColumn(name = "placement_drive_id", nullable = false)
     private PlacementDrive placementDrive;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "placement_role_id")
+    private PlacementRole placementRole;
+
     @Column(name = "scheduled_for", nullable = false)
     private Instant scheduledFor;
 
-    /**
-     * Reminder execution status. Stored as VARCHAR(50) with CHECK constraint.
-     * @see ReminderStatus for valid values.
-     */
+    @Column(name = "interval_minutes", nullable = false)
+    private Integer intervalMinutes = 60;
+
+    @Column(name = "max_reminders", nullable = false)
+    private Integer maxReminders = 5;
+
+    @Column(name = "reminders_sent", nullable = false)
+    private Integer remindersSent = 0;
+
+    @Column(name = "cancel_reason")
+    private String cancelReason;
+
+    @Column(name = "last_reminder_at")
+    private Instant lastReminderAt;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
     private ReminderStatus status = ReminderStatus.PENDING;
@@ -60,15 +68,15 @@ public class ReminderTask {
             columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
     private Instant updatedAt;
 
-    // -------------------------------------------------------------------------
-    // Lifecycle hooks
-    // -------------------------------------------------------------------------
     @PrePersist
     protected void onCreate() {
         Instant now = Instant.now();
         if (createdAt == null) createdAt = now;
         if (updatedAt == null) updatedAt = now;
         if (status == null) status = ReminderStatus.PENDING;
+        if (intervalMinutes == null) intervalMinutes = 60;
+        if (maxReminders == null) maxReminders = 5;
+        if (remindersSent == null) remindersSent = 0;
     }
 
     @PreUpdate
@@ -76,15 +84,10 @@ public class ReminderTask {
         updatedAt = Instant.now();
     }
 
-    // -------------------------------------------------------------------------
-    // Constructors
-    // -------------------------------------------------------------------------
     public ReminderTask() {}
 
-    // -------------------------------------------------------------------------
-    // Getters and Setters
-    // -------------------------------------------------------------------------
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     public Student getStudent() { return student; }
     public void setStudent(Student student) { this.student = student; }
@@ -92,8 +95,26 @@ public class ReminderTask {
     public PlacementDrive getPlacementDrive() { return placementDrive; }
     public void setPlacementDrive(PlacementDrive placementDrive) { this.placementDrive = placementDrive; }
 
+    public PlacementRole getPlacementRole() { return placementRole; }
+    public void setPlacementRole(PlacementRole placementRole) { this.placementRole = placementRole; }
+
     public Instant getScheduledFor() { return scheduledFor; }
     public void setScheduledFor(Instant scheduledFor) { this.scheduledFor = scheduledFor; }
+
+    public Integer getIntervalMinutes() { return intervalMinutes; }
+    public void setIntervalMinutes(Integer intervalMinutes) { this.intervalMinutes = intervalMinutes; }
+
+    public Integer getMaxReminders() { return maxReminders; }
+    public void setMaxReminders(Integer maxReminders) { this.maxReminders = maxReminders; }
+
+    public Integer getRemindersSent() { return remindersSent; }
+    public void setRemindersSent(Integer remindersSent) { this.remindersSent = remindersSent; }
+
+    public String getCancelReason() { return cancelReason; }
+    public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
+
+    public Instant getLastReminderAt() { return lastReminderAt; }
+    public void setLastReminderAt(Instant lastReminderAt) { this.lastReminderAt = lastReminderAt; }
 
     public ReminderStatus getStatus() { return status; }
     public void setStatus(ReminderStatus status) { this.status = status; }
@@ -104,15 +125,11 @@ public class ReminderTask {
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 
-    // -------------------------------------------------------------------------
-    // equals / hashCode
-    // -------------------------------------------------------------------------
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ReminderTask)) return false;
-        ReminderTask other = (ReminderTask) o;
-        return id != null && id.equals(other.id);
+        if (!(o instanceof ReminderTask other)) return false;
+        return Objects.equals(id, other.id);
     }
 
     @Override
@@ -122,6 +139,7 @@ public class ReminderTask {
 
     @Override
     public String toString() {
-        return "ReminderTask{id=" + id + ", scheduledFor=" + scheduledFor + ", status=" + status + "}";
+        return "ReminderTask{id=" + id + ", scheduledFor=" + scheduledFor + ", status=" + status
+                + ", sent=" + remindersSent + "/" + maxReminders + "}";
     }
 }

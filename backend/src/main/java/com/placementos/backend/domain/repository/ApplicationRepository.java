@@ -8,7 +8,6 @@ import java.util.Optional;
 
 /**
  * Persistence repository for {@link Application}.
- * The composite unique constraint (student_id, placement_drive_id) is enforced by the database.
  */
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
 
@@ -19,6 +18,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     List<Application> findByStudentId(Long studentId);
 
     List<Application> findByPlacementDriveId(Long placementDriveId);
+
+    List<Application> findByPlacementRoleId(Long placementRoleId);
 
     List<Application> findByStatus(ApplicationStatus status);
 }
