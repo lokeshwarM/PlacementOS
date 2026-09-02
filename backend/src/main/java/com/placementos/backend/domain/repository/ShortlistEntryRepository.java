@@ -20,6 +20,8 @@ public interface ShortlistEntryRepository extends JpaRepository<ShortlistEntry, 
 
     List<ShortlistEntry> findByMatchStatus(ShortlistMatchStatus matchStatus);
 
+    List<ShortlistEntry> findByPlacementDriveIdAndMatchStatus(Long placementDriveId, ShortlistMatchStatus matchStatus);
+
     List<ShortlistEntry> findByRegistrationNumber(String registrationNumber);
 
     List<ShortlistEntry> findByNeopatId(String neopatId);

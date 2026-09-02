@@ -85,15 +85,11 @@ public class AuthenticatedStudentProvider {
             // Not a numeric ID, continue to other lookups
         }
 
-        // 2. Try by email address
-        Optional<Student> studentByEmail = studentRepository.findByEmail(identifier);
-        if (studentByEmail.isPresent()) return studentByEmail;
-
-        // 3. Try by registration number
+        // 2. Try by registration number
         Optional<Student> studentByReg = studentRepository.findByRegistrationNumber(identifier);
         if (studentByReg.isPresent()) return studentByReg;
 
-        // 4. Try by NeoPAT ID
+        // 3. Try by NeoPAT ID
         return studentRepository.findByNeopatId(identifier);
     }
 }

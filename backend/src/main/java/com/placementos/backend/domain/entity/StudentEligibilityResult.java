@@ -81,6 +81,17 @@ public class StudentEligibilityResult {
 
     public StudentEligibilityResult() {}
 
+    public StudentEligibilityResult(Student student, PlacementDrive placementDrive, PlacementRole placementRole,
+                                  EligibilityDecision decision, List<Map<String, Object>> criteriaResults, String evaluatorVersion) {
+        this.student = student;
+        this.placementDrive = placementDrive;
+        this.placementRole = placementRole;
+        this.decision = decision;
+        this.criteriaResults = criteriaResults != null ? criteriaResults : new ArrayList<>();
+        this.evaluatorVersion = evaluatorVersion;
+        this.evaluatedAt = Instant.now();
+    }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

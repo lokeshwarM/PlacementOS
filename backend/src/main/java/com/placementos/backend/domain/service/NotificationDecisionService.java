@@ -275,8 +275,8 @@ public class NotificationDecisionService {
         outbox.setNotification(savedNotification);
         outbox.setIdempotencyKey(idempotencyKey);
         outbox.setChannel(channel);
-        // Recipient phone for WhatsApp or email fallback
-        String recipient = student.getPhoneNumber() != null ? student.getPhoneNumber() : student.getEmail();
+        // Recipient phone for WhatsApp
+        String recipient = student.getPhoneNumber() != null ? student.getPhoneNumber() : student.getRegistrationNumber();
         outbox.setRecipient(recipient != null ? recipient : "unknown");
         outbox.setPayload(messagePayload);
         outbox.setStatus(OutboxStatus.PENDING);

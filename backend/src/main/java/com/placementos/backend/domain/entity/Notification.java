@@ -66,6 +66,7 @@ public class Notification {
     protected void onCreate() {
         if (createdAt == null) createdAt = Instant.now();
         if (status == null) status = NotificationStatus.PENDING;
+        if (idempotencyKey == null) idempotencyKey = "auto:" + java.util.UUID.randomUUID();
     }
 
     public Notification() {}

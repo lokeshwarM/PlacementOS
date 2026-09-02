@@ -46,14 +46,16 @@ class NotificationIdempotencyTest {
 
         // First notification should save successfully
         Notification n1 = new Notification();
+        n1.setIdempotencyKey("idemp-key-test-1");
         n1.setStudent(student);
         n1.setPlacementDrive(drive);
         n1.setNotificationType(NotificationType.ELIGIBILITY);
         n1.setChannel(NotificationChannel.EMAIL);
         notificationRepository.saveAndFlush(n1);
 
-        // Second duplicate notification should throw constraint violation
+        // Second duplicate notification with same idempotency key should throw constraint violation
         Notification n2 = new Notification();
+        n2.setIdempotencyKey("idemp-key-test-1");
         n2.setStudent(student);
         n2.setPlacementDrive(drive);
         n2.setNotificationType(NotificationType.ELIGIBILITY);
