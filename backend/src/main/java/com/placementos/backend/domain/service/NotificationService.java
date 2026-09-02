@@ -14,17 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
- * Business service establishing the notification domain boundary.
- *
- * This service manages notification records in the database only.
- * No external notification delivery (WhatsApp, Telegram, Email, In-App) is implemented here.
- * Delivery will be added in a later milestone.
- *
- * Idempotency: the service checks for an existing equivalent notification before
- * creating a new record, using the combination of
- * (student_id, placement_drive_id, notification_type, channel).
+ * Business service for querying and managing notification entity records.
  */
 @Service
 @Transactional(readOnly = true)
@@ -42,22 +35,30 @@ public class NotificationService {
         this.placementDriveRepository = placementDriveRepository;
     }
 
-    // -------------------------------------------------------------------------
-    // Writes
-    // -------------------------------------------------------------------------
-
     /**
-     * Creates a notification record for a student and placement drive.
-     * Does not send anything externally.
-     *
-     * Callers should check {@link #hasEquivalentNotification} before calling this
-     * to avoid duplicate notifications for the same event.
+     * Legacy creation method for tests/manual recording.
      */
     @Transactional
     public Notification createNotification(Long studentId,
                                             Long placementDriveId,
                                             NotificationType type,
                                             NotificationChannel channel) {
+        String key = String.format("legacy:%d:%d:%s:%s", studentId, placementDriveId, type, channel);
+        return createNotificationWithKey(studentId, placementDriveId, type, channel, key, null);
+    }
+
+    @Transactional
+    public Notification createNotificationWithKey(Long studentId,
+                                                  Long placementDriveId,
+                                                  NotificationType type,
+                                                  NotificationChannel channel,
+                                                  String idempotencyKey,
+                                                  String messagePayload) {
+        Optional<Notification> existing = notificationRepository.findByIdempotencyKey(idempotencyKey);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> ResourceNotFoundException.student(studentId));
 
@@ -65,18 +66,16 @@ public class NotificationService {
                 .orElseThrow(() -> ResourceNotFoundException.placementDrive(placementDriveId));
 
         Notification notification = new Notification();
+        notification.setIdempotencyKey(idempotencyKey);
         notification.setStudent(student);
         notification.setPlacementDrive(drive);
         notification.setNotificationType(type);
         notification.setChannel(channel);
+        notification.setMessagePayload(messagePayload);
         notification.setStatus(NotificationStatus.PENDING);
 
         return notificationRepository.save(notification);
     }
-
-    // -------------------------------------------------------------------------
-    // Reads
-    // -------------------------------------------------------------------------
 
     public List<Notification> findByStudentId(Long studentId) {
         return notificationRepository.findByStudentId(studentId);
@@ -86,18 +85,11 @@ public class NotificationService {
         return notificationRepository.findByPlacementDriveId(placementDriveId);
     }
 
-    /**
-     * Checks whether an equivalent notification (same student, drive, type, and channel)
-     * already exists, regardless of status. Used to prevent duplicate dispatches.
-     */
-    public boolean hasEquivalentNotification(Long studentId,
-                                              Long placementDriveId,
-                                              NotificationType type,
-                                              NotificationChannel channel) {
-        return notificationRepository.findByStudentId(studentId)
-                .stream()
-                .anyMatch(n -> n.getPlacementDrive().getId().equals(placementDriveId)
-                            && n.getNotificationType() == type
-                            && n.getChannel() == channel);
+    public Optional<Notification> findByIdempotencyKey(String key) {
+        return notificationRepository.findByIdempotencyKey(key);
+    }
+
+    public boolean hasEquivalentNotification(String idempotencyKey) {
+        return notificationRepository.existsByIdempotencyKey(idempotencyKey);
     }
 }
