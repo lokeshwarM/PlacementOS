@@ -93,13 +93,23 @@ Reminder Lifecycle & Stop-on-Done (`ReminderService`):
   1. Recurring interval reminder evaluation
   2. Immediate cancellation of active `ReminderTask`s and pending outbox rows when student explicitly applies (`POST /api/v1/applications/{id}/apply`) or deadline passes
 
+↓
+
+Student Portal & End-to-End Workflow (Next.js App Router + Spring Boot Security):
+  1. Student registers/authenticates via `POST /api/v1/auth/login` (JWT token issuance)
+  2. Authenticated `Principal` resolves linked `Student` domain identity via `AuthenticatedStudentProvider`
+  3. Onboarding & profile completeness lifecycle (`INCOMPLETE` → `COMPLETE` → `VERIFIED`)
+  4. Dynamic dashboard displaying role-aware eligibility with explainable criteria breakdowns
+  5. Explicit student application submission triggering reminder cancellation and outbox pruning
+  6. Paginated notification center and reminder manager with interactive controls
+
 ## Distributed System Responsibility
 
-- **Spring Boot**: Core business backend and sole source of truth for all business state (students, placements, placement roles, applications, shortlists, notifications, transactional outbox, reminders, normalized messages, attachment metadata). All persistence goes through Spring Boot.
+- **Spring Boot**: Core business backend and sole source of truth for all business state (users, students, placements, placement roles, applications, shortlists, notifications, transactional outbox, reminders, normalized messages, attachment metadata). All persistence goes through Spring Boot.
 - **Python/FastAPI**: Stateless processing service for email classification, regex/deterministic parsing, LLM fallback extraction, document attachment classification, and Excel/PDF/DOCX candidate extraction. Python does NOT directly mutate business tables.
 - **PostgreSQL**: Persistent system of record (hosted on Neon PostgreSQL). Schema is managed by Flyway versioned migrations.
 - **Redis Streams**: Asynchronous queue infrastructure used to decouple ingestion and processing. PostgreSQL remains the sole source of truth; Redis Streams provides durable at-least-once transport.
-- **Next.js**: Frontend interface.
+- **Next.js**: Student-facing portal consuming backend APIs and presenting role-aware eligibility, applications, notifications, and reminders without replicating backend business rules.
 
 ## Persistence Rules
 

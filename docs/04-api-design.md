@@ -10,7 +10,26 @@ OpenAPI documentation (Swagger UI) is **intentionally deferred** as per mileston
 - **Error Handling**: A `@RestControllerAdvice` provides consistent error responses in JSON, returning `400 Bad Request`, `404 Not Found`, and `409 Conflict` appropriately.
 - **DTOs**: Domain entities are NEVER returned directly from the API. DTOs are mapped for all requests and responses.
 
-## Student APIs
+## Authentication & Identity APIs
+- `POST /api/v1/auth/register` - Registers a new user account with `STUDENT` role (email & password). Returns JWT token and user summary.
+- `POST /api/v1/auth/login` - Authenticates user credentials. Returns JWT token and linked student summary.
+- `GET /api/v1/auth/me` - Retrieves current authenticated user details and profile status.
+
+## Student Portal APIs (`/api/v1/student`)
+All `/api/v1/student/**` endpoints strictly derive student identity from the authenticated `SecurityContext` / `Principal` (zero query-param tampering).
+- `GET /api/v1/student/profile` - Get current student academic profile & completeness status (`INCOMPLETE`, `COMPLETE`, `VERIFIED`).
+- `POST /api/v1/student/onboarding` - Initial profile completion and linking to pre-provisioned or newly created student record.
+- `PUT /api/v1/student/profile` - Update student-editable fields (name, phone, specialization, arrears, gender).
+- `GET /api/v1/student/placements?page=0&size=10` - Paginated placement drives with role-specific eligibility, explainable criteria reasons, application states, and deadline countdowns.
+- `GET /api/v1/student/placements/{driveId}` - Detailed placement drive view with comprehensive role criteria matches.
+- `GET /api/v1/student/applications?page=0&size=10` - Paginated applications for current student.
+- `GET /api/v1/student/applications/{applicationId}` - Single application detail (enforces student ownership).
+- `POST /api/v1/student/applications/{applicationId}/apply` - Explicit apply action (records applied timestamp, cancels active reminders & pending outbox rows).
+- `GET /api/v1/student/notifications?page=0&size=10&type=...` - Paginated notification history for current student.
+- `GET /api/v1/student/reminders?page=0&size=10` - Paginated active/scheduled reminders for current student.
+- `POST /api/v1/student/reminders/{reminderId}/stop` - Explicit action to cancel a reminder task and pending outbox rows.
+
+## Student Admin APIs
 - `GET /api/v1/students` - List all students
 - `GET /api/v1/students/{id}` - Get student by ID
 - `GET /api/v1/students/registration/{registrationNumber}` - Get student by registration number

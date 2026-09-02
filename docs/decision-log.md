@@ -527,3 +527,13 @@ Implement active stop-on-apply/done semantics that immediately cancel pending `R
 Students who have already submitted their application must not continue receiving intrusive deadline reminder messages.
 ### Trade-off
 Application submission transactions must coordinate reminder deactivation and outbox row cancellation.
+
+---
+
+## D-061
+### Decision
+Decouple Authentication Identity (`UserAccount`) from Student Domain Identity (`Student`) with 1-to-1 linkage, enforced unique constraints, and principal-derived identity resolution.
+### Reason
+Authentication credentials (email, hashed password, JWT claims) represent authentication identity, whereas academic placement eligibility (registration number, NeoPAT ID, CGPA, arrears, branch) represents student domain identity. Decoupling them allows pre-provisioned or shortlist-matched students to exist independently before user registration and prevents students from claiming other students' registration numbers through unique DB constraints and server-side verification.
+### Trade-off
+Requires onboarding profile linking logic and distinct profile lifecycle statuses (`INCOMPLETE`, `COMPLETE`, `VERIFIED`).

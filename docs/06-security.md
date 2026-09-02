@@ -112,7 +112,15 @@ Google Cloud Pub/Sub pushes Gmail notifications to a dedicated webhook (`/api/in
 
 ## Principal-Derived Student Identity (Anti-Impersonation Boundary)
 
-- **Zero Parameter Impersonation**: Student-facing endpoints (`POST /api/v1/applications/{id}/apply`, `GET /api/v1/applications/my`, `GET /api/v1/notifications/my`, `GET /api/v1/reminders/my`, `POST /api/v1/reminders/{id}/stop`) **never** trust a client-supplied query parameter (such as `?studentId=123`).
+- **Zero Parameter Impersonation**: Student-facing endpoints (`POST /api/v1/applications/{id}/apply`, `GET /api/v1/student/**`, `GET /api/v1/applications/my`, `GET /api/v1/notifications/my`, `GET /api/v1/reminders/my`, `POST /api/v1/reminders/{id}/stop`) **never** trust a client-supplied query parameter (such as `?studentId=123`).
 - **Principal Derivation**: The student's identity is resolved directly from the authenticated `SecurityContext` / `Principal` via `AuthenticatedStudentProvider`.
 - **Cross-Student Access Prevention**: When an authenticated student interacts with an application, reminder, or notification, the service layer strictly verifies ownership (`app.getStudent().getId().equals(authenticatedStudent.getId())`) and throws `AccessDeniedException` (HTTP 403 Forbidden) if a student attempts to access or modify another student's record.
 - **WhatsApp Isolation**: No live external WhatsApp credentials are baked into the codebase; all delivery operations in development and testing route through `MockWhatsAppNotificationProvider`.
+
+## Authentication & JWT Security
+
+- **Password Hashing**: Passwords are never stored in plaintext. They are hashed using BCrypt (`BCryptPasswordEncoder`).
+- **Standard HMAC-SHA256 JWTs**: JWTs are signed with HMAC-SHA256 (`HmacSHA256`) using a strong secret key (`app.jwt.secret`) and verified with constant-time message digest comparison (`MessageDigest.isEqual`).
+- **Decoupled Identity & Immutable Auth Claims**: JWT claims contain `userId`, `email`, and `role`. Mutable profile completion states (`profileStatus`) are always derived from the database system of record, preventing stale token authorization bypass.
+- **Secure Onboarding Linking**: Registration numbers are protected by database unique constraints (`users.student_id UNIQUE`). An account cannot claim a student record that is already linked to another registered user.
+- **Generic Error Responses**: Failed authentication attempts return generic `401 Unauthorized` or `409 Conflict` responses to prevent username/email enumeration.

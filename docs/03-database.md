@@ -20,15 +20,17 @@ All timestamps are stored as `TIMESTAMPTZ` (UTC). No local-timezone text values 
 ## Table Relationships
 
 ```
-students
+users (Authentication Identity & Profile Lifecycle)
   |
-  +---- student_eligibility_results ---- placement_roles & placement_drives
-  |
-  +---- applications ---- placement_drives
-  |
-  +---- notifications ---- placement_drives
-  |
-  +---- reminder_tasks ---- placement_drives
+  +---- (1:1 optional) ---- students (Academic & Placement Domain Identity)
+                              |
+                              +---- student_eligibility_results ---- placement_roles & placement_drives
+                              |
+                              +---- applications ---- placement_drives & placement_roles
+                              |
+                              +---- notifications ---- placement_drives & placement_roles
+                              |
+                              +---- reminder_tasks ---- placement_drives & placement_roles
 
 gmail_sources
   |
@@ -52,6 +54,24 @@ processed_emails
 ```
 
 ## Tables
+
+### users
+Stores authentication accounts, hashed credentials, roles, profile completion lifecycle states, and 1-to-1 linkage to domain students.
+
+| Field          | Type         | Notes                                                        |
+|----------------|--------------|--------------------------------------------------------------|
+| id             | BIGSERIAL    | Primary Key                                                  |
+| email          | VARCHAR(255) | UNIQUE, NOT NULL                                             |
+| password_hash  | VARCHAR(255) | BCrypt hashed password, NOT NULL                             |
+| role           | VARCHAR(50)  | STUDENT / ADMIN, NOT NULL                                    |
+| student_id     | BIGINT       | UNIQUE, FK → students(id) ON DELETE SET NULL, nullable       |
+| profile_status | VARCHAR(50)  | INCOMPLETE / COMPLETE / VERIFIED, NOT NULL                   |
+| created_at     | TIMESTAMPTZ  | UTC, NOT NULL                                                |
+| updated_at     | TIMESTAMPTZ  | UTC, NOT NULL                                                |
+
+Indexes: `email`, `student_id`, `role`, `profile_status`
+
+---
 
 ### gmail_sources
 Stores registered Gmail accounts (CDC inboxes) and their access credentials for email ingestion.
