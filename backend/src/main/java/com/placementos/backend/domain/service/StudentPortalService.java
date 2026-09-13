@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -77,11 +78,9 @@ public class StudentPortalService {
         String regNo = request.getRegistrationNumber().trim().toUpperCase();
 
         if (student == null) {
-            // Check if student with this registration number already exists
             Optional<Student> existingStudentOpt = studentRepository.findByRegistrationNumber(regNo);
             if (existingStudentOpt.isPresent()) {
                 Student existingStudent = existingStudentOpt.get();
-                // Ensure no other user account is already linked to this student
                 Optional<UserAccount> existingLinkedUser = userAccountRepository.findByStudentId(existingStudent.getId());
                 if (existingLinkedUser.isPresent() && !existingLinkedUser.get().getId().equals(user.getId())) {
                     log.warn("Onboarding conflict: Registration number {} is already linked to user {}", regNo, existingLinkedUser.get().getId());
@@ -93,7 +92,6 @@ public class StudentPortalService {
             }
         }
 
-        // Populate / update profile data
         student.setName(request.getName().trim());
         student.setRegistrationNumber(regNo);
         student.setNeopatId(request.getNeopatId() != null ? request.getNeopatId().trim() : null);
@@ -109,7 +107,6 @@ public class StudentPortalService {
         Student savedStudent = studentRepository.save(student);
         user.setStudent(savedStudent);
 
-        // Validate completeness
         if (isProfileComplete(savedStudent)) {
             user.setProfileStatus(ProfileStatus.COMPLETE);
         } else {
@@ -175,7 +172,7 @@ public class StudentPortalService {
         PlacementDrive drive = placementDriveRepository.findById(driveId)
                 .orElseThrow(() -> ResourceNotFoundException.placementDrive(driveId));
 
-        List<PlacementRole> roles = placementRoleRepository.findByPlacementDriveId(driveId);
+        List<PlacementRole> roles = placementRoleRepository.findByPlacementDriveIdOrderByRoleOrderAsc(driveId);
         List<StudentEligibilityResult> eligResults = eligibilityResultRepository
                 .findByStudentIdAndPlacementDriveId(studentId, driveId);
         Optional<Application> appOpt = applicationRepository.findByStudentIdAndPlacementDriveId(studentId, driveId);
@@ -211,9 +208,9 @@ public class StudentPortalService {
                 drive.getTitle(),
                 drive.getDescription(),
                 drive.getApplicationDeadline(),
-                drive.getDriveDate(),
-                drive.getTestDate(),
-                drive.getInterviewDate(),
+                drive.getReceivedAt(),
+                null,
+                null,
                 overallDecision,
                 appStatus,
                 appOpt.map(Application::getId).orElse(null),
@@ -318,7 +315,7 @@ public class StudentPortalService {
 
     private StudentPlacementDriveCardResponse mapDriveToCard(Long studentId, PlacementDrive drive) {
         Long driveId = drive.getId();
-        List<PlacementRole> roles = placementRoleRepository.findByPlacementDriveId(driveId);
+        List<PlacementRole> roles = placementRoleRepository.findByPlacementDriveIdOrderByRoleOrderAsc(driveId);
         List<StudentEligibilityResult> eligResults = eligibilityResultRepository
                 .findByStudentIdAndPlacementDriveId(studentId, driveId);
         Optional<Application> appOpt = applicationRepository.findByStudentIdAndPlacementDriveId(studentId, driveId);
@@ -349,7 +346,7 @@ public class StudentPortalService {
                 drive.getTitle(),
                 drive.getDescription(),
                 drive.getApplicationDeadline(),
-                drive.getDriveDate(),
+                drive.getReceivedAt(),
                 overallDecision,
                 appStatus,
                 appOpt.map(Application::getId).orElse(null),
@@ -396,17 +393,59 @@ public class StudentPortalService {
             EligibilityDecision decision = result != null ? result.getDecision() : EligibilityDecision.REVIEW_REQUIRED;
             List<String> explanations = extractHumanReadableReasons(result);
 
+            Map<String, Object> criteria = role.getEligibilityCriteria();
+            BigDecimal minCgpa = extractMinCgpa(criteria);
+            List<String> branches = extractBranches(criteria);
+            Integer arrears = extractArrears(criteria);
+            String gender = extractGender(criteria);
+
             return new RoleEligibilityCardResponse(
                     role.getId(),
                     role.getRoleTitle(),
                     decision,
                     explanations,
-                    role.getMinCgpa(),
-                    role.getEligibleBranches(),
-                    role.getStandingArrearsAllowed(),
-                    role.getGenderAllowed()
+                    minCgpa,
+                    branches,
+                    arrears,
+                    gender
             );
         }).toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private BigDecimal extractMinCgpa(Map<String, Object> criteria) {
+        if (criteria == null || !criteria.containsKey("min_cgpa")) return null;
+        Object val = criteria.get("min_cgpa");
+        try {
+            return new BigDecimal(val.toString());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> extractBranches(Map<String, Object> criteria) {
+        if (criteria == null || !criteria.containsKey("eligible_branches")) return List.of();
+        Object val = criteria.get("eligible_branches");
+        if (val instanceof List<?> list) {
+            return list.stream().map(Object::toString).toList();
+        }
+        return List.of();
+    }
+
+    private Integer extractArrears(Map<String, Object> criteria) {
+        if (criteria == null || !criteria.containsKey("standing_arrears_allowed")) return null;
+        Object val = criteria.get("standing_arrears_allowed");
+        try {
+            return Integer.parseInt(val.toString());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String extractGender(Map<String, Object> criteria) {
+        if (criteria == null || !criteria.containsKey("gender_allowed")) return null;
+        return Objects.toString(criteria.get("gender_allowed"), null);
     }
 
     private List<String> extractHumanReadableReasons(StudentEligibilityResult result) {

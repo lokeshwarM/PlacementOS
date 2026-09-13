@@ -77,8 +77,9 @@ public class AuthenticatedStudentProvider {
             throw new AccessDeniedException("User is not authenticated");
         }
 
-        return userAccountRepository.findByEmail(identifier)
-                .orElseThrow(() -> new AccessDeniedException("No user account found for principal: " + identifier));
+        final String resolvedIdentifier = identifier;
+        return userAccountRepository.findByEmail(resolvedIdentifier)
+                .orElseThrow(() -> new AccessDeniedException("No user account found for principal: " + resolvedIdentifier));
     }
 
     /**
