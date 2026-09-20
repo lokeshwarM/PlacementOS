@@ -57,11 +57,32 @@ export default function RemindersPage() {
         </p>
       </div>
 
+      <div className="flex items-center justify-between p-4 bg-sky-50 dark:bg-sky-950/30 rounded-2xl border border-sky-200 dark:border-sky-900">
+        <div className="flex items-center space-x-3">
+          <span className="text-xl">✈️</span>
+          <div>
+            <p className="text-xs font-bold text-sky-900 dark:text-sky-200">
+              Get Real-Time Alerts & 1-Tap Actions on Telegram
+            </p>
+            <p className="text-xs text-sky-700 dark:text-sky-400 mt-0.5">
+              Connect Telegram to receive deadline countdowns and mark applications APPLIED straight from your chat.
+            </p>
+          </div>
+        </div>
+        <a
+          href="/profile"
+          className="px-3.5 py-1.5 text-xs font-bold text-sky-700 hover:text-sky-800 bg-white hover:bg-sky-50 border border-sky-300 rounded-xl transition-all whitespace-nowrap"
+        >
+          Connect in Profile →
+        </a>
+      </div>
+
       {message && (
         <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-sm font-medium dark:bg-indigo-950/40 dark:border-indigo-900 dark:text-indigo-300">
           {message}
         </div>
       )}
+
 
       {loading ? (
         <LoadingSpinner text="Loading reminders..." />

@@ -8,6 +8,8 @@ import {
   StudentPlacementDriveCard,
   StudentProfile,
   StudentReminder,
+  TelegramLinkResponse,
+  TelegramStatusResponse,
 } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
@@ -166,6 +168,27 @@ class ApiClient {
       method: 'POST',
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // Telegram Integration
+  // ---------------------------------------------------------------------------
+
+  async getTelegramStatus(): Promise<TelegramStatusResponse> {
+    return this.request<TelegramStatusResponse>('/student/telegram/status');
+  }
+
+  async generateTelegramLinkToken(): Promise<TelegramLinkResponse> {
+    return this.request<TelegramLinkResponse>('/student/telegram/link-token', {
+      method: 'POST',
+    });
+  }
+
+  async unlinkTelegram(): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/student/telegram/unlink', {
+      method: 'POST',
+    });
+  }
 }
 
 export const api = new ApiClient();
+

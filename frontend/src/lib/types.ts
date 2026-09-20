@@ -139,3 +139,16 @@ export interface PageResponse<T> {
   totalPages: number;
   isLast: boolean;
 }
+
+export interface TelegramStatusResponse {
+  linked: boolean;
+  telegramUsername: string | null;
+  linkedAt: string | null;
+}
+
+export interface TelegramLinkResponse {
+  token: string;
+  deepLink: string;
+  expiresAt: string;
+}
+
