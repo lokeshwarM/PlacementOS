@@ -56,6 +56,9 @@ class StudentPortalControllerSecurityTest {
     @MockitoBean
     private AuthenticatedStudentProvider studentProvider;
 
+    @MockitoBean
+    private com.placementos.backend.domain.service.TelegramLinkingService telegramLinkingService;
+
     private MockMvc mockMvc;
     private Student studentAlice;
     private Student studentBob;
@@ -166,4 +169,48 @@ class StudentPortalControllerSecurityTest {
                 .andExpect(jsonPath("$.applicationId").value(123))
                 .andExpect(jsonPath("$.status").value("APPLIED"));
     }
+
+    @Test
+    @DisplayName("Unauthenticated request to /api/v1/student/telegram/link-token is rejected")
+    void unauthenticatedTelegramLink_rejected() throws Exception {
+        mockMvc.perform(post("/api/v1/student/telegram/link-token"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "alice@example.com", roles = {"STUDENT"})
+    @DisplayName("Authenticated student can request a Telegram link token")
+    void authenticatedStudent_canRequestLinkToken() throws Exception {
+        when(studentProvider.getStudentFromPrincipal(any(Principal.class))).thenReturn(studentAlice);
+        when(telegramLinkingService.createLinkToken(studentAlice))
+                .thenReturn(new com.placementos.backend.domain.dto.student.TelegramLinkResponse(
+                        "abc123token",
+                        "https://t.me/PlacementOS_bot?start=abc123token",
+                        java.time.Instant.now().plusSeconds(900)
+                ));
+
+        mockMvc.perform(post("/api/v1/student/telegram/link-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("abc123token"))
+                .andExpect(jsonPath("$.deepLink").value("https://t.me/PlacementOS_bot?start=abc123token"));
+    }
+
+    @Test
+    @WithMockUser(username = "alice@example.com", roles = {"STUDENT"})
+    @DisplayName("Authenticated student can fetch Telegram connection status")
+    void authenticatedStudent_canGetTelegramStatus() throws Exception {
+        when(studentProvider.getStudentFromPrincipal(any(Principal.class))).thenReturn(studentAlice);
+        when(telegramLinkingService.getStatus(studentAlice))
+                .thenReturn(new com.placementos.backend.domain.dto.student.TelegramStatusResponse(
+                        true,
+                        "alice_tg",
+                        java.time.Instant.now()
+                ));
+
+        mockMvc.perform(get("/api/v1/student/telegram/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.linked").value(true))
+                .andExpect(jsonPath("$.telegramUsername").value("alice_tg"));
+    }
 }
+

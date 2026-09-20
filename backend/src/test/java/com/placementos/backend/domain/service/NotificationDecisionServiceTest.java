@@ -51,6 +51,9 @@ public class NotificationDecisionServiceTest {
     @Mock
     private MessageTemplateService templateService;
 
+    @Mock
+    private TelegramIdentityRepository telegramIdentityRepository;
+
     private NotificationDecisionService decisionService;
 
     private Student student;
@@ -69,7 +72,8 @@ public class NotificationDecisionServiceTest {
                 shortlistEntryRepository,
                 applicationRepository,
                 reminderTaskRepository,
-                templateService
+                templateService,
+                telegramIdentityRepository
         );
 
         student = new Student();
@@ -108,15 +112,53 @@ public class NotificationDecisionServiceTest {
         when(templateService.renderEligibilityMessage(any(), any(), any()))
                 .thenReturn("Eligible for Amazon SDE 1");
 
+        when(telegramIdentityRepository.findByStudentId(1L))
+                .thenReturn(Optional.of(new TelegramIdentity(student, 987654321L, 111L, "alice")));
+
         Optional<Notification> result = decisionService.decideEligibilityNotification(1L, 10L);
 
         assertTrue(result.isPresent());
         Notification notification = result.get();
         assertEquals("eligibility:student:1:drive:10", notification.getIdempotencyKey());
         assertEquals(NotificationType.ELIGIBILITY, notification.getNotificationType());
+        assertEquals(NotificationChannel.TELEGRAM, notification.getChannel());
+        assertEquals(NotificationStatus.PENDING, notification.getStatus());
 
         verify(notificationRepository).save(any(Notification.class));
-        verify(outboxRepository).save(any(NotificationOutbox.class));
+        verify(outboxRepository).save(argThat(outbox ->
+                outbox.getChannel() == NotificationChannel.TELEGRAM &&
+                outbox.getRecipient().equals("987654321") &&
+                outbox.getStatus() == OutboxStatus.PENDING
+        ));
+    }
+
+    @Test
+    void decideEligibilityNotification_unlinkedStudent_marksSkippedAndCancelled() {
+        when(notificationRepository.existsByIdempotencyKey("eligibility:student:1:drive:10")).thenReturn(false);
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
+        when(placementDriveRepository.findById(10L)).thenReturn(Optional.of(drive));
+
+        StudentEligibilityResult eligResult = new StudentEligibilityResult(
+                student, drive, role1, EligibilityDecision.ELIGIBLE, List.of(), "v1"
+        );
+        when(eligibilityResultRepository.findByStudentIdAndPlacementDriveId(1L, 10L))
+                .thenReturn(List.of(eligResult));
+        when(templateService.renderEligibilityMessage(any(), any(), any()))
+                .thenReturn("Eligible for Amazon SDE 1");
+        when(telegramIdentityRepository.findByStudentId(1L)).thenReturn(Optional.empty());
+
+        Optional<Notification> result = decisionService.decideEligibilityNotification(1L, 10L);
+
+        assertTrue(result.isPresent());
+        Notification notification = result.get();
+        assertEquals(NotificationChannel.TELEGRAM, notification.getChannel());
+        assertEquals(NotificationStatus.SKIPPED, notification.getStatus());
+
+        verify(outboxRepository).save(argThat(outbox ->
+                outbox.getChannel() == NotificationChannel.TELEGRAM &&
+                outbox.getStatus() == OutboxStatus.CANCELLED &&
+                "STUDENT_TELEGRAM_NOT_LINKED".equals(outbox.getLastError())
+        ));
     }
 
     @Test
