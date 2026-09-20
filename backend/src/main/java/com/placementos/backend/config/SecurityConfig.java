@@ -65,6 +65,9 @@ public class SecurityConfig {
                 
                 // Internal endpoints for Gmail OAuth registration
                 .requestMatchers("/api/internal/gmail/oauth2/**").permitAll()
+
+                // Telegram inbound webhook (authenticated via secret token header)
+                .requestMatchers("/api/internal/telegram/webhook").permitAll()
                 
                 // All other API endpoints
                 .requestMatchers("/api/v1/**").permitAll()
