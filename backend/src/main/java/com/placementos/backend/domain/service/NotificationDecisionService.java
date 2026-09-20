@@ -46,6 +46,7 @@ public class NotificationDecisionService {
     private final ApplicationRepository applicationRepository;
     private final ReminderTaskRepository reminderTaskRepository;
     private final MessageTemplateService templateService;
+    private final TelegramIdentityRepository telegramIdentityRepository;
 
     public NotificationDecisionService(NotificationRepository notificationRepository,
                                      NotificationOutboxRepository outboxRepository,
@@ -56,7 +57,8 @@ public class NotificationDecisionService {
                                      ShortlistEntryRepository shortlistEntryRepository,
                                      ApplicationRepository applicationRepository,
                                      ReminderTaskRepository reminderTaskRepository,
-                                     MessageTemplateService templateService) {
+                                     MessageTemplateService templateService,
+                                     TelegramIdentityRepository telegramIdentityRepository) {
         this.notificationRepository = notificationRepository;
         this.outboxRepository = outboxRepository;
         this.studentRepository = studentRepository;
@@ -67,6 +69,7 @@ public class NotificationDecisionService {
         this.applicationRepository = applicationRepository;
         this.reminderTaskRepository = reminderTaskRepository;
         this.templateService = templateService;
+        this.telegramIdentityRepository = telegramIdentityRepository;
     }
 
     /**
@@ -110,7 +113,7 @@ public class NotificationDecisionService {
                 drive,
                 primaryRole,
                 NotificationType.ELIGIBILITY,
-                NotificationChannel.WHATSAPP,
+                NotificationChannel.TELEGRAM,
                 messageText
         );
 
@@ -146,7 +149,7 @@ public class NotificationDecisionService {
                 drive,
                 role,
                 NotificationType.SHORTLIST,
-                NotificationChannel.WHATSAPP,
+                NotificationChannel.TELEGRAM,
                 messageText
         );
 
@@ -193,7 +196,7 @@ public class NotificationDecisionService {
                 drive,
                 role,
                 NotificationType.DEADLINE,
-                NotificationChannel.WHATSAPP,
+                NotificationChannel.TELEGRAM,
                 messageText
         );
 
@@ -244,7 +247,7 @@ public class NotificationDecisionService {
                 drive,
                 role,
                 NotificationType.REMINDER,
-                NotificationChannel.WHATSAPP,
+                NotificationChannel.TELEGRAM,
                 messageText
         );
 
@@ -266,7 +269,21 @@ public class NotificationDecisionService {
         notification.setNotificationType(type);
         notification.setChannel(channel);
         notification.setMessagePayload(messagePayload);
-        notification.setStatus(NotificationStatus.PENDING);
+
+        Optional<TelegramIdentity> telegramIdentityOpt = Optional.empty();
+        if (channel == NotificationChannel.TELEGRAM) {
+            telegramIdentityOpt = telegramIdentityRepository.findByStudentId(student.getId());
+        }
+
+        boolean isTelegramLinked = telegramIdentityOpt.isPresent();
+
+        if (channel == NotificationChannel.TELEGRAM && !isTelegramLinked) {
+            // Student has not linked Telegram yet
+            // Mark notification as SKIPPED to avoid endless retry loops
+            notification.setStatus(NotificationStatus.SKIPPED);
+        } else {
+            notification.setStatus(NotificationStatus.PENDING);
+        }
 
         Notification savedNotification = notificationRepository.save(notification);
 
@@ -275,18 +292,37 @@ public class NotificationDecisionService {
         outbox.setNotification(savedNotification);
         outbox.setIdempotencyKey(idempotencyKey);
         outbox.setChannel(channel);
-        // Recipient phone for WhatsApp
-        String recipient = student.getPhoneNumber() != null ? student.getPhoneNumber() : student.getRegistrationNumber();
-        outbox.setRecipient(recipient != null ? recipient : "unknown");
+
+        if (channel == NotificationChannel.TELEGRAM) {
+            if (isTelegramLinked) {
+                outbox.setRecipient(String.valueOf(telegramIdentityOpt.get().getTelegramChatId()));
+                outbox.setStatus(OutboxStatus.PENDING);
+            } else {
+                outbox.setRecipient("UNLINKED");
+                outbox.setStatus(OutboxStatus.CANCELLED);
+                outbox.setLastError("STUDENT_TELEGRAM_NOT_LINKED");
+                outbox.setProcessedAt(Instant.now());
+                log.info("Student {} has not linked Telegram. Notification {} marked SKIPPED, Outbox CANCELLED.",
+                        student.getId(), savedNotification.getId());
+            }
+        } else if (channel == NotificationChannel.WHATSAPP) {
+            String recipient = student.getPhoneNumber() != null ? student.getPhoneNumber() : student.getRegistrationNumber();
+            outbox.setRecipient(recipient != null ? recipient : "unknown");
+            outbox.setStatus(OutboxStatus.PENDING);
+        } else {
+            outbox.setRecipient(student.getRegistrationNumber() != null ? student.getRegistrationNumber() : "unknown");
+            outbox.setStatus(OutboxStatus.PENDING);
+        }
+
         outbox.setPayload(messagePayload);
-        outbox.setStatus(OutboxStatus.PENDING);
         outbox.setAttemptCount(0);
         outbox.setMaxAttempts(3);
         outbox.setAvailableAt(Instant.now());
 
         outboxRepository.save(outbox);
 
-        log.info("Atomically created Notification id={} and Outbox record for key={}", savedNotification.getId(), idempotencyKey);
+        log.info("Atomically created Notification id={} (status={}) and Outbox record (status={}) for key={}",
+                savedNotification.getId(), savedNotification.getStatus(), outbox.getStatus(), idempotencyKey);
         return savedNotification;
     }
 }

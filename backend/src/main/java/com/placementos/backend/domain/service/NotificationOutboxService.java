@@ -8,6 +8,7 @@ import com.placementos.backend.domain.enums.OutboxStatus;
 import com.placementos.backend.domain.repository.NotificationOutboxRepository;
 import com.placementos.backend.domain.repository.NotificationRepository;
 import com.placementos.backend.domain.service.provider.NotificationDeliveryResult;
+import com.placementos.backend.domain.service.provider.TelegramNotificationProvider;
 import com.placementos.backend.domain.service.provider.WhatsAppNotificationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,13 +33,16 @@ public class NotificationOutboxService {
     private final NotificationOutboxRepository outboxRepository;
     private final NotificationRepository notificationRepository;
     private final WhatsAppNotificationProvider whatsAppProvider;
+    private final TelegramNotificationProvider telegramProvider;
 
     public NotificationOutboxService(NotificationOutboxRepository outboxRepository,
                                    NotificationRepository notificationRepository,
-                                   WhatsAppNotificationProvider whatsAppProvider) {
+                                   WhatsAppNotificationProvider whatsAppProvider,
+                                   TelegramNotificationProvider telegramProvider) {
         this.outboxRepository = outboxRepository;
         this.notificationRepository = notificationRepository;
         this.whatsAppProvider = whatsAppProvider;
+        this.telegramProvider = telegramProvider;
     }
 
     /**
@@ -82,14 +86,20 @@ public class NotificationOutboxService {
 
         NotificationDeliveryResult result;
 
-        if (outbox.getChannel() == NotificationChannel.WHATSAPP) {
+        if (outbox.getChannel() == NotificationChannel.TELEGRAM) {
+            result = telegramProvider.sendTelegramMessage(
+                    outbox.getRecipient(),
+                    outbox.getPayload(),
+                    outbox.getIdempotencyKey()
+            );
+        } else if (outbox.getChannel() == NotificationChannel.WHATSAPP) {
             result = whatsAppProvider.sendWhatsAppMessage(
                     outbox.getRecipient(),
                     outbox.getPayload(),
                     outbox.getIdempotencyKey()
             );
         } else {
-            // Other channels (e.g. Email / Telegram) can be added cleanly in future milestones
+            // Other channels (e.g. Email / In-App) can be added cleanly in future milestones
             log.warn("Unsupported delivery channel {} for outbox id={}", outbox.getChannel(), outbox.getId());
             result = NotificationDeliveryResult.permanentFailure("Unsupported channel: " + outbox.getChannel());
         }
