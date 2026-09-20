@@ -84,14 +84,25 @@ Notification Decision Engine (`NotificationDecisionService`):
 
 Transactional Outbox & Delivery Worker (`NotificationOutboxService` & `NotificationDeliveryWorker`):
   1. Concurrency-safe claiming of due outbox records
-  2. Dispatches to `WhatsAppNotificationProvider` (backed by testable `MockWhatsAppNotificationProvider`)
+  2. Dispatches to `TelegramNotificationProvider` via HTTPS to Telegram Bot API (`NotificationChannel.TELEGRAM`)
   3. Updates delivery status (`SENT`, `RETRYING` with exponential backoff, or `FAILED`)
+  4. Unlinked students are safely bypassed (`SKIPPED` notification, `CANCELLED` outbox) to prevent infinite retry loops
+
+↓
+
+Telegram Account Linking & Webhook (`TelegramLinkingService` & `TelegramWebhookController`):
+  1. Authenticated student requests one-time cryptographically hashed 15-minute link token (`POST /api/v1/student/telegram/link-token`)
+  2. Student opens deep link `https://t.me/<bot>?start=<token>`
+  3. Telegram Bot API delivers update to protected webhook (`POST /api/internal/telegram/webhook`, verified via `X-Telegram-Bot-Api-Secret-Token`)
+  4. Webhook validates token idempotently, links Telegram chat ID in `telegram_identities` table, and enables push alerts
+  5. Student can send `/done` or tap `[Mark Applied]` inline button to mark application as `APPLIED` and automatically cancel active reminders
 
 ↓
 
 Reminder Lifecycle & Stop-on-Done (`ReminderService`):
   1. Recurring interval reminder evaluation
-  2. Immediate cancellation of active `ReminderTask`s and pending outbox rows when student explicitly applies (`POST /api/v1/applications/{id}/apply`) or deadline passes
+  2. Immediate cancellation of active `ReminderTask`s and pending outbox rows when student explicitly applies (`POST /api/v1/applications/{id}/apply` or Telegram `/done`) or deadline passes
+
 
 ↓
 

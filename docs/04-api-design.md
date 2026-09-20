@@ -85,3 +85,9 @@ All `/api/v1/student/**` endpoints strictly derive student identity from the aut
 - `GET /api/v1/internal/shortlists/unresolved` - Endpoint to inspect ambiguous and review-required candidate records.
 - `POST /api/internal/gmail/messages/retrieve` - Development trigger to fetch and persist raw Gmail message.
 - `POST /api/internal/gmail/history/sync` - Development trigger for History API synchronization.
+
+## Telegram Integration APIs
+- `POST /api/v1/student/telegram/link-token` - Generates a 15-minute cryptographically hashed single-use linking token and deep link (`https://t.me/<bot>?start=<token>`) for the authenticated student.
+- `GET /api/v1/student/telegram/status` - Retrieves Telegram connection status, linked username, and confirmation timestamp for the authenticated student.
+- `POST /api/v1/student/telegram/unlink` - Disconnects the linked Telegram account for the authenticated student.
+- `POST /api/internal/telegram/webhook` - Inbound webhook for Telegram Bot API updates (authenticated via `X-Telegram-Bot-Api-Secret-Token`). Handles `/start <token>`, `/done`, and `DONE:<applicationId>` callback queries idempotently.

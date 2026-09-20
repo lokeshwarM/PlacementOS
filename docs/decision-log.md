@@ -537,3 +537,17 @@ Decouple Authentication Identity (`UserAccount`) from Student Domain Identity (`
 Authentication credentials (email, hashed password, JWT claims) represent authentication identity, whereas academic placement eligibility (registration number, NeoPAT ID, CGPA, arrears, branch) represents student domain identity. Decoupling them allows pre-provisioned or shortlist-matched students to exist independently before user registration and prevents students from claiming other students' registration numbers through unique DB constraints and server-side verification.
 ### Trade-off
 Requires onboarding profile linking logic and distinct profile lifecycle statuses (`INCOMPLETE`, `COMPLETE`, `VERIFIED`).
+
+---
+
+## D-062
+### Decision
+Transition the primary student notification delivery channel from WhatsApp to Telegram Bot API HTTPS delivery, with explicit one-time deep-link account linking (`/start <token>`), secret-token authenticated inbound webhooks (`POST /api/internal/telegram/webhook`), and 1-tap `DONE / APPLIED` reminder cancellation.
+### Reason
+1. Telegram Bot API provides a robust, zero-cost, HTTPS-based delivery channel with built-in interactive markup (`InlineKeyboardMarkup`), eliminating third-party messaging broker fees and template approval bottlenecks during this development phase.
+2. Telegram bots cannot initiate private conversations with arbitrary users who have not previously started the bot; therefore, a secure, short-lived (15-min) single-use cryptographically hashed token flow (`https://t.me/<bot>?start=<token>`) guarantees that students explicitly authorize bot communication without exposing or trusting arbitrary client-supplied chat IDs.
+3. Decoupling notification channel identity into a dedicated `telegram_identities` table enforces 1-to-1 student linkage, prevents cross-student identity claims, and keeps the core `Student` domain model channel-agnostic.
+4. When students have not linked Telegram, notifications are marked `SKIPPED` and transactional outbox rows are marked `CANCELLED` (`STUDENT_TELEGRAM_NOT_LINKED`), preventing infinite retry loops in the asynchronous delivery worker.
+5. Inbound webhook callbacks (`DONE:<applicationId>` and `/done`) verify student identity via the linked Telegram chat ID and invoke existing domain services (`ApplicationService.apply`, `ReminderService.stopRemindersForStudentAndDrive`), ensuring Telegram is strictly a delivery and interaction transport rather than a secondary state machine.
+### Trade-off
+Students must perform an explicit 1-time linking action via the student portal before Telegram notifications can be delivered to their personal chat.

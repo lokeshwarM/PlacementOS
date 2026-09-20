@@ -357,3 +357,49 @@ Represents scheduled recurring deadline reminders with stop-on-apply lifecycle m
 
 Unique constraint: `(student_id, placement_drive_id)`
 Indexes: `(status, scheduled_for)`, `placement_role_id`
+
+---
+
+### telegram_identities
+Stores linked Telegram identity mappings for students to decouple personal Telegram credentials from the core student record.
+
+| Field              | Type         | Notes                                     |
+|--------------------|--------------|-------------------------------------------|
+| id                 | BIGSERIAL    | Primary Key                               |
+| student_id         | BIGINT       | FK → students, NOT NULL, **UNIQUE**       |
+| telegram_chat_id   | BIGINT       | **UNIQUE**, NOT NULL                      |
+| telegram_user_id   | BIGINT       | Telegram user ID, nullable                |
+| telegram_username  | VARCHAR(255) | Telegram handle (e.g. @alice), nullable   |
+| linked_at          | TIMESTAMPTZ  | Timestamp when linking was confirmed      |
+| created_at         | TIMESTAMPTZ  | UTC, NOT NULL                             |
+| updated_at         | TIMESTAMPTZ  | UTC, NOT NULL                             |
+
+Unique constraints: `(student_id)`, `(telegram_chat_id)`
+Indexes: `student_id`, `telegram_chat_id`, `telegram_user_id`
+
+---
+
+### telegram_link_tokens
+Stores short-lived, single-use cryptographically hashed tokens for the deep-link `/start <token>` linking flow.
+
+| Field              | Type         | Notes                                     |
+|--------------------|--------------|-------------------------------------------|
+| id                 | BIGSERIAL    | Primary Key                               |
+| token_hash         | VARCHAR(64)  | SHA-256 hex string, **UNIQUE**, NOT NULL  |
+| student_id         | BIGINT       | FK → students, NOT NULL                   |
+| expires_at         | TIMESTAMPTZ  | Token expiration (15-min TTL), NOT NULL   |
+| used_at            | TIMESTAMPTZ  | Timestamp when redeemed, nullable         |
+| created_at         | TIMESTAMPTZ  | UTC, NOT NULL                             |
+
+Unique constraint: `(token_hash)`
+Indexes: `student_id`, `expires_at`
+
+---
+
+### telegram_webhook_updates
+Tracks processed Telegram `update_id`s to ensure idempotent inbound webhook processing across retries.
+
+| Field              | Type         | Notes                                     |
+|--------------------|--------------|-------------------------------------------|
+| update_id          | BIGINT       | Primary Key (Telegram Bot API update_id)  |
+| processed_at       | TIMESTAMPTZ  | UTC, NOT NULL                             |

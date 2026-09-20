@@ -124,3 +124,12 @@ Google Cloud Pub/Sub pushes Gmail notifications to a dedicated webhook (`/api/in
 - **Decoupled Identity & Immutable Auth Claims**: JWT claims contain `userId`, `email`, and `role`. Mutable profile completion states (`profileStatus`) are always derived from the database system of record, preventing stale token authorization bypass.
 - **Secure Onboarding Linking**: Registration numbers are protected by database unique constraints (`users.student_id UNIQUE`). An account cannot claim a student record that is already linked to another registered user.
 - **Generic Error Responses**: Failed authentication attempts return generic `401 Unauthorized` or `409 Conflict` responses to prevent username/email enumeration.
+
+## Telegram Delivery & Identity Linking Security
+
+- **Bot Token Protection**: The Telegram bot token (`TELEGRAM_BOT_TOKEN`) is treated as a secret credential, injected via environment variables, and **never logged** or exposed to clients.
+- **One-Time Cryptographic Linking Tokens**: Students link their Telegram account using short-lived (15-minute), single-use tokens generated via `SecureRandom`. The database stores only the SHA-256 hash of the token (`telegram_link_tokens.token_hash`), never the raw token.
+- **Anti-Impersonation & Uniqueness**: The `telegram_identities` table enforces unique constraints on both `student_id` and `telegram_chat_id`. A Telegram chat cannot be linked to multiple students, and a student cannot claim another student's Telegram identity.
+- **Inbound Webhook Verification**: The inbound webhook `POST /api/internal/telegram/webhook` validates the secret token header `X-Telegram-Bot-Api-Secret-Token` against the configured secret (`TELEGRAM_WEBHOOK_SECRET`). Requests failing or omitting the secret are rejected with `403 Forbidden`.
+- **Webhook Idempotency**: Update IDs (`update_id`) are tracked in `telegram_webhook_updates`. Retried or duplicate updates from Telegram are acknowledged (`200 OK`) and ignored without duplicate processing.
+- **Safe Callback Authorization**: Interactive buttons and commands (`DONE:<applicationId>`, `/done`) resolve student identity strictly from the verified Telegram chat ID in `telegram_identities`. The application service explicitly verifies student ownership before transitioning application state or stopping reminders.
