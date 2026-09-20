@@ -51,3 +51,10 @@ management:
   endpoint:
     health:
       show-details: never
+
+telegram:
+  bot-token: ${TELEGRAM_BOT_TOKEN:}
+  bot-username: ${TELEGRAM_BOT_USERNAME:PlacementOS_bot}
+  api-base-url: ${TELEGRAM_API_BASE_URL:https://api.telegram.org}
+  webhook-secret: ${TELEGRAM_WEBHOOK_SECRET:}
+
