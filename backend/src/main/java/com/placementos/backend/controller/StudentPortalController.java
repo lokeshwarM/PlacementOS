@@ -33,15 +33,18 @@ public class StudentPortalController {
     private final ApplicationService applicationService;
     private final ReminderService reminderService;
     private final AuthenticatedStudentProvider studentProvider;
+    private final com.placementos.backend.domain.service.TelegramLinkingService telegramLinkingService;
 
     public StudentPortalController(StudentPortalService studentPortalService,
                                    ApplicationService applicationService,
                                    ReminderService reminderService,
-                                   AuthenticatedStudentProvider studentProvider) {
+                                   AuthenticatedStudentProvider studentProvider,
+                                   com.placementos.backend.domain.service.TelegramLinkingService telegramLinkingService) {
         this.studentPortalService = studentPortalService;
         this.applicationService = applicationService;
         this.reminderService = reminderService;
         this.studentProvider = studentProvider;
+        this.telegramLinkingService = telegramLinkingService;
     }
 
     // -------------------------------------------------------------------------
@@ -195,4 +198,30 @@ public class StudentPortalController {
 
         return ResponseEntity.ok(Map.of("status", "CANCELLED", "reason", reason));
     }
+
+    // -------------------------------------------------------------------------
+    // Telegram Connection
+    // -------------------------------------------------------------------------
+
+    @PostMapping("/telegram/link-token")
+    public ResponseEntity<TelegramLinkResponse> createTelegramLinkToken(Principal principal) {
+        Student student = studentProvider.getStudentFromPrincipal(principal);
+        TelegramLinkResponse response = telegramLinkingService.createLinkToken(student);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/telegram/status")
+    public ResponseEntity<TelegramStatusResponse> getTelegramStatus(Principal principal) {
+        Student student = studentProvider.getStudentFromPrincipal(principal);
+        TelegramStatusResponse response = telegramLinkingService.getStatus(student);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/telegram/unlink")
+    public ResponseEntity<Map<String, String>> unlinkTelegram(Principal principal) {
+        Student student = studentProvider.getStudentFromPrincipal(principal);
+        telegramLinkingService.unlink(student);
+        return ResponseEntity.ok(Map.of("status", "UNLINKED"));
+    }
 }
+
