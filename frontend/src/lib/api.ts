@@ -12,6 +12,7 @@ import {
   TelegramStatusResponse,
 } from './types';
 
+// NEXT_PUBLIC_API_URL must be set in production. Do NOT rely on localhost fallback in deployed builds.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
 class ApiClient {
@@ -186,6 +187,20 @@ class ApiClient {
   async unlinkTelegram(): Promise<{ status: string }> {
     return this.request<{ status: string }>('/student/telegram/unlink', {
       method: 'POST',
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Account Management
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Authenticated account deletion. Derives user identity from the JWT principal.
+   * Does NOT accept userId/email from the client.
+   */
+  async deleteAccount(): Promise<void> {
+    await this.request<void>('/auth/account', {
+      method: 'DELETE',
     });
   }
 }
