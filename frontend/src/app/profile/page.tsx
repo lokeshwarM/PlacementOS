@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import { TelegramStatusResponse } from '../../lib/types';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 export default function ProfilePage() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, logout } = useAuth();
+  const router = useRouter();
 
   const [name, setName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -23,6 +25,12 @@ export default function ProfilePage() {
   const [connectingTelegram, setConnectingTelegram] = useState(false);
   const [disconnectingTelegram, setDisconnectingTelegram] = useState(false);
   const [deepLinkUrl, setDeepLinkUrl] = useState<string | null>(null);
+
+  // Account deletion state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     api.getTelegramStatus().then(setTelegramStatus).catch(console.error);
@@ -95,6 +103,22 @@ export default function ProfilePage() {
       else setError('Failed to disconnect Telegram');
     } finally {
       setDisconnectingTelegram(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await api.deleteAccount();
+      logout();
+      router.replace('/login');
+    } catch (err: unknown) {
+      if (err instanceof Error) setDeleteError(err.message);
+      else setDeleteError('Account deletion failed. Please try again.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -277,7 +301,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                Phone Number (WhatsApp)
+                Phone Number
               </label>
               <input
                 type="tel"
@@ -340,6 +364,77 @@ export default function ProfilePage() {
             </button>
           </div>
         </form>
+      </div>
+      {/* Danger Zone: Account Deletion */}
+      <div className="bg-white dark:bg-zinc-900 border border-rose-200 dark:border-rose-900/60 rounded-3xl p-6 shadow-xs space-y-4">
+        <div>
+          <h2 className="text-sm font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider">Danger Zone</h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            Permanently delete your PlacementOS account. This anonymises your personal data and removes
+            your Telegram link. Institutional placement records (drives, applications, shortlist entries)
+            are retained as university records.
+          </p>
+        </div>
+
+        {!showDeleteConfirm ? (
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-4 py-2 text-xs font-bold text-rose-700 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all dark:bg-rose-950/30 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/50"
+          >
+            Delete My Account
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-2xl text-xs text-rose-800 dark:text-rose-300 font-medium space-y-1">
+              <p>⚠️ This action is <strong>irreversible</strong>. Your personal information will be anonymised.</p>
+              <p>Your login credentials and Telegram link will be permanently removed.</p>
+              <p>Active reminders and pending notifications will be cancelled.</p>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                Type <strong>DELETE</strong> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+                className="w-full sm:w-64 px-3.5 py-2 text-sm rounded-xl border border-rose-300 dark:border-rose-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-rose-500"
+              />
+            </div>
+            {deleteError && (
+              <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{deleteError}</p>
+            )}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={deleteConfirmText !== 'DELETE' || deleting}
+                onClick={handleDeleteAccount}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition-all shadow-sm"
+              >
+                {deleting ? 'Deleting...' : 'Permanently Delete Account'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeleteError(null); }}
+                className="px-4 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Privacy Policy Link */}
+      <div className="text-center pb-4">
+        <a
+          href="/privacy"
+          className="text-xs text-zinc-400 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
+        >
+          Privacy Policy
+        </a>
       </div>
     </div>
   );

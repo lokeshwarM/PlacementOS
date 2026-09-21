@@ -73,8 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const isAuthRoute = pathname === '/login';
     const isOnboardingRoute = pathname === '/onboarding';
+    const isPublicRoute = pathname === '/privacy';
 
-    if (!user && !isAuthRoute) {
+    if (!user && !isAuthRoute && !isPublicRoute) {
       router.replace('/login');
     } else if (user && isAuthRoute) {
       if (user.profileStatus === 'INCOMPLETE') {
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         router.replace('/dashboard');
       }
-    } else if (user && !isOnboardingRoute && user.profileStatus === 'INCOMPLETE') {
+    } else if (user && !isOnboardingRoute && !isPublicRoute && user.profileStatus === 'INCOMPLETE') {
       router.replace('/onboarding');
     }
   }, [user, loading, pathname, router]);
