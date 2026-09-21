@@ -9,11 +9,12 @@ PlacementOS is an event-driven placement workflow platform that automatically pr
 ## Architecture
 
 PlacementOS uses a distributed architecture designed for scalability and clear separation of concerns:
-- **Spring Boot**: Core business platform, managing student state, placements, placement roles, and eligibility logic.
-- **Python (FastAPI)**: Stateless processing service dedicated to email classification, deterministic text extraction, LLM fallback parsing, and future PDF/Excel/OCR file parsing.
+- **Spring Boot**: Core business platform, managing student state, placements, placement roles, eligibility logic, and authoritative state transitions.
+- **Python (FastAPI)**: Stateless processing service dedicated to email classification, deterministic text extraction, LLM fallback parsing, and PDF/Excel/DOCX candidate extraction.
 - **PostgreSQL**: System of record (Hosted on Neon PostgreSQL).
 - **Redis Streams**: Message broker and durable async stream queue.
-- **Next.js**: Frontend application.
+- **Next.js Web Portal**: Production student-facing web application (`frontend/`).
+- **React Native / Expo Android Mobile App**: Native Android application (`mobile/`) targeting Android API 36 (`com.placementos.app`) with SecureStore hardware-backed credentials and Play Store readiness.
 
 *(Note: Docker and infrastructure containerization are intentionally deferred to a later milestone.)*
 
@@ -53,3 +54,6 @@ To run the application locally, you must provide your own Neon PostgreSQL and Re
 - **Telegram Notification Delivery & Bot Integration**: Active student notification channel via `TelegramNotificationProvider` over HTTPS, featuring cryptographic one-time deep-link account linking (`/start <token>`), secret-authenticated webhook update handling with idempotency, and interactive `/done` or `DONE:<appId>` application state transitions that automatically halt reminder lifecycles. (Pluggable `WhatsAppNotificationProvider` retained for legacy/multi-channel extensibility).
 - **Reminder State & Stop-on-Done**: Recurring interval reminder engine that automatically stops active tasks and cancels pending outbox reminders when a student explicitly marks `APPLIED` (via portal or Telegram `/done`) or the deadline passes.
 - **Principal-Derived Student Identity**: Complete anti-impersonation boundary deriving student identity from authenticated `SecurityContext` / `Principal` across all student-facing endpoints (zero trust of client-supplied `?studentId=...`).
+- **Dual Client Architecture (Web + Native Android Mobile)**: Production Next.js web application and React Native / Expo native Android application consuming identical Spring Boot REST/JWT APIs with no client-specific backend branches.
+- **Native Android Mobile Client**: Targeting Android API 36 (Android 16, package `com.placementos.app`) with New Architecture, hardware-backed token security via `Expo SecureStore`, Telegram deep-linking, touch-first UX, and production AAB/APK build workflows.
+- **Secure Account Deletion**: Authenticated account deletion (`DELETE /api/v1/auth/account`) with student PII anonymisation, credential deactivation, Telegram identity unlinking, and reminder cancellation while permanently preserving institutional placement records (drives, applications, shortlist entries).

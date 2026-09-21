@@ -14,12 +14,13 @@ OpenAPI documentation (Swagger UI) is **intentionally deferred** as per mileston
 - `POST /api/v1/auth/register` - Registers a new user account with `STUDENT` role (email & password). Returns JWT token and user summary.
 - `POST /api/v1/auth/login` - Authenticates user credentials. Returns JWT token and linked student summary.
 - `GET /api/v1/auth/me` - Retrieves current authenticated user details and profile status.
+- `DELETE /api/v1/auth/account` - Authenticated account deletion. Identity is derived strictly from the authenticated JWT principal. Anonymises student PII, removes Telegram link, cancels active reminders and outbox messages, clears login credentials, and retains institutional placement records.
 
 ## Student Portal APIs (`/api/v1/student`)
 All `/api/v1/student/**` endpoints strictly derive student identity from the authenticated `SecurityContext` / `Principal` (zero query-param tampering).
 - `GET /api/v1/student/profile` - Get current student academic profile & completeness status (`INCOMPLETE`, `COMPLETE`, `VERIFIED`).
 - `POST /api/v1/student/onboarding` - Initial profile completion and linking to pre-provisioned or newly created student record.
-- `PUT /api/v1/student/profile` - Update student-editable fields (name, phone, specialization, arrears, gender).
+- `PUT /api/v1/student/profile` - Update student-editable fields (phone, specialization, gender).
 - `GET /api/v1/student/placements?page=0&size=10` - Paginated placement drives with role-specific eligibility, explainable criteria reasons, application states, and deadline countdowns.
 - `GET /api/v1/student/placements/{driveId}` - Detailed placement drive view with comprehensive role criteria matches.
 - `GET /api/v1/student/applications?page=0&size=10` - Paginated applications for current student.
@@ -28,6 +29,9 @@ All `/api/v1/student/**` endpoints strictly derive student identity from the aut
 - `GET /api/v1/student/notifications?page=0&size=10&type=...` - Paginated notification history for current student.
 - `GET /api/v1/student/reminders?page=0&size=10` - Paginated active/scheduled reminders for current student.
 - `POST /api/v1/student/reminders/{reminderId}/stop` - Explicit action to cancel a reminder task and pending outbox rows.
+- `GET /api/v1/student/telegram/status` - Returns Telegram link status, username, and linked timestamp.
+- `POST /api/v1/student/telegram/link-token` - Generates a 15-minute cryptographically hashed link token and Telegram deepLink (`https://t.me/<bot>?start=<token>`).
+- `POST /api/v1/student/telegram/unlink` - Disconnects the linked Telegram identity.
 
 ## Student Admin APIs
 - `GET /api/v1/students` - List all students

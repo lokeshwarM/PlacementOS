@@ -53,3 +53,7 @@ target/
 *.iml
 .eclipse/
 .settings/
+
+# Local agent workspace configs and scratch plans
+AGENTS.md
+implementation_plan.md

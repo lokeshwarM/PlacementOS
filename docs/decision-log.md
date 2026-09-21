@@ -551,3 +551,16 @@ Transition the primary student notification delivery channel from WhatsApp to Te
 5. Inbound webhook callbacks (`DONE:<applicationId>` and `/done`) verify student identity via the linked Telegram chat ID and invoke existing domain services (`ApplicationService.apply`, `ReminderService.stopRemindersForStudentAndDrive`), ensuring Telegram is strictly a delivery and interaction transport rather than a secondary state machine.
 ### Trade-off
 Students must perform an explicit 1-time linking action via the student portal before Telegram notifications can be delivered to their personal chat.
+
+---
+
+## D-063
+### Decision
+Adopt a Dual-Client Architecture consisting of a production Next.js web portal and a native Android application built with React Native + Expo (targeting Android API 36 with New Architecture enabled), both consuming the unified PlacementOS Spring Boot REST/JWT API backend without client-specific backend bifurcations.
+### Reason
+1. **Single Source of Truth:** Business logic—including deterministic eligibility evaluation, shortlist matching, application state reconciliation, notification decisioning, reminder lifecycle management, and Telegram webhook interactions—must remain exclusively authoritative within the Spring Boot backend. Duplicating logic across web and mobile would introduce state drift and security vulnerabilities.
+2. **Native Mobile Experience:** A native React Native + Expo application provides smooth, responsive touch interactions, reliable hardware-backed credential storage via `Expo SecureStore` (Android Keystore / iOS Keychain), and seamless deep linking into Telegram for 1-tap notification management.
+3. **Google Play Compliance:** By targeting Android API 36 (Android 16), configuring stable package ID `com.placementos.app`, establishing production AAB build workflows, implementing an explicit in-app account deletion flow (`DELETE /api/v1/auth/account`), and publishing a publicly accessible privacy policy (`/privacy`), the mobile application meets all current Google Play Store distribution requirements.
+4. **Data Ownership & Institutional Retention:** Account deletion distinguishes student PII and authentication credentials (which are soft-deleted and anonymised) from institutional placement records (drives, applications, and shortlist matching entries), which are permanently retained as the university system of record.
+### Trade-off
+Client builds must maintain strict alignment with backend DTO schemas and handle network failure states gracefully. Both clients require synchronized updates when backend contracts evolve.

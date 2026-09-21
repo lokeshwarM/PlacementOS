@@ -20,10 +20,24 @@ The application defines two conceptual roles:
 
 ## API Security & Statelessness
 
-- The application uses **Spring Security** as the protective boundary.
-- **Stateless Design**: HTTP sessions are disabled (`SessionCreationPolicy.STATELESS`). The future implementation will use stateless tokens (e.g., JWT).
+- The application uses **Spring Security** as the protective boundary with JWT/Bearer token authentication.
+- **Stateless Design**: HTTP sessions are disabled (`SessionCreationPolicy.STATELESS`).
 - **CSRF**: Disabled because the API is stateless and does not rely on browser cookie-based sessions for primary authentication.
-- **CORS**: Wildcard `*` origins are avoided. Production configuration will restrict origins based on environment injection (e.g., frontend host).
+- **CORS**: Environment-driven via `cors.allowed-origins` (`CORS_ALLOWED_ORIGINS`). Supports comma-separated allowed origins (e.g. `http://localhost:3000`, deployed web frontend domain). Never uses wildcard `*` with credentials.
+- **Dual-Client Storage**:
+  - **Web**: Next.js client stores JWT in memory / browser storage, communicating via Bearer headers over HTTPS.
+  - **Native Mobile (Android)**: React Native / Expo client stores sensitive JWT tokens exclusively in Android Keystore / iOS Keychain via `Expo SecureStore`. Plain `AsyncStorage` is strictly forbidden. Tokens are never logged.
+
+## Authenticated Account Deletion
+
+Account deletion (`DELETE /api/v1/auth/account`) is strictly authenticated:
+- Target account is derived exclusively from the authenticated `SecurityContext` / `Principal` (no client-supplied `userId` or `email`).
+- **Anonymised**: Student personal name, phone number, gender, specialization, user account email (`deleted_{id}@placementos.invalid`), password hash cleared.
+- **Removed**: Telegram identity and link tokens permanently unlinked and deleted.
+- **Cancelled**: Active `ReminderTask`s and pending outbox notifications are immediately marked `CANCELLED`.
+- **Retained**: Registration number, NeoPAT ID, branch, batch, CGPA, and institutional placement records (drives, applications, shortlist entries) are retained as the university system of record.
+- **Idempotent**: Calling deletion on an already-deleted account is safe and returns without error.
+- **Post-Deletion Guard**: `AuthenticatedStudentProvider` actively rejects any authenticated requests from soft-deleted accounts.
 
 ## Temporary Development State
 

@@ -106,27 +106,31 @@ Reminder Lifecycle & Stop-on-Done (`ReminderService`):
 
 ↓
 
-Student Portal & End-to-End Workflow (Next.js App Router + Spring Boot Security):
+Dual Frontend Clients & End-to-End Workflow (Next.js Web + React Native Android Mobile):
   1. Student registers/authenticates via `POST /api/v1/auth/login` (JWT token issuance)
   2. Authenticated `Principal` resolves linked `Student` domain identity via `AuthenticatedStudentProvider`
   3. Onboarding & profile completeness lifecycle (`INCOMPLETE` → `COMPLETE` → `VERIFIED`)
   4. Dynamic dashboard displaying role-aware eligibility with explainable criteria breakdowns
   5. Explicit student application submission triggering reminder cancellation and outbox pruning
   6. Paginated notification center and reminder manager with interactive controls
+  7. Telegram bot account linking with 1-tap notifications and `/done` response workflows
+  8. Secure account deletion (`DELETE /api/v1/auth/account`) with PII anonymisation and institutional placement record retention
 
 ## Distributed System Responsibility
 
-- **Spring Boot**: Core business backend and sole source of truth for all business state (users, students, placements, placement roles, applications, shortlists, notifications, transactional outbox, reminders, normalized messages, attachment metadata). All persistence goes through Spring Boot.
+- **Spring Boot**: Core business backend and sole source of truth for all business state (users, students, placements, placement roles, applications, shortlists, notifications, transactional outbox, reminders, normalized messages, attachment metadata). All persistence and business decisions go exclusively through Spring Boot.
 - **Python/FastAPI**: Stateless processing service for email classification, regex/deterministic parsing, LLM fallback extraction, document attachment classification, and Excel/PDF/DOCX candidate extraction. Python does NOT directly mutate business tables.
-- **PostgreSQL**: Persistent system of record (hosted on Neon PostgreSQL). Schema is managed by Flyway versioned migrations.
+- **PostgreSQL**: Persistent system of record (hosted on Neon PostgreSQL). Schema is managed by Flyway versioned migrations (through V14).
 - **Redis Streams**: Asynchronous queue infrastructure used to decouple ingestion and processing. PostgreSQL remains the sole source of truth; Redis Streams provides durable at-least-once transport.
-- **Next.js**: Student-facing portal consuming backend APIs and presenting role-aware eligibility, applications, notifications, and reminders without replicating backend business rules.
+- **Next.js Web Application**: Production student-facing web portal consuming backend APIs and presenting role-aware eligibility, applications, notifications, and reminders without replicating backend business rules.
+- **React Native / Expo Android Mobile Application**: Native Android mobile application (targeting Android API 36, application ID `com.placementos.app`) consuming the same unified backend REST/JWT APIs. Uses `Expo SecureStore` for hardware-backed credential storage, deep links to Telegram, and provides an in-app account deletion workflow adhering to Google Play requirements.
 
 ## Persistence Rules
 
 - Spring Boot is the only service with database write access to business tables.
 - Python results must be submitted to Spring Boot endpoints and validated before storage.
 - Schema changes require explicit Flyway migration files — Hibernate does not auto-create or auto-alter tables in any environment.
+- Account deletion distinguishes student PII (anonymised) and authentication credentials (cleared) from institutional placement records (permanently retained).
 
 *(Note: Docker configuration is intentionally deferred until the deployment milestone)*
 
