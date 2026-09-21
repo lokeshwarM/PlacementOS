@@ -1,6 +1,7 @@
 package com.placementos.backend.config;
 
 import com.placementos.backend.security.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,6 +16,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -22,6 +24,14 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    /**
+     * Comma-separated list of allowed CORS origins.
+     * Set CORS_ALLOWED_ORIGINS environment variable in production to include the deployed frontend URL.
+     * Development defaults to localhost origins.
+     */
+    @Value("${cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}")
+    private String corsAllowedOrigins;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -54,7 +64,10 @@ public class SecurityConfig {
                 // Deny all other actuator endpoints
                 .requestMatchers("/actuator/**").denyAll()
                 
-                // Public authentication endpoints
+                // Account deletion is authenticated — listed BEFORE the broad auth permitAll
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/auth/account").authenticated()
+                
+                // Public authentication endpoints (register, login, me)
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 
                 // Student portal endpoints require authentication
@@ -80,12 +93,19 @@ public class SecurityConfig {
     }
 
     /**
-     * Define strict CORS behavior for Next.js frontend.
+     * Environment-driven CORS configuration.
+     * Origins are read from {@code cors.allowed-origins} (set via CORS_ALLOWED_ORIGINS env var).
+     * Does NOT use wildcard '*' with credentials.
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        List<String> origins = Arrays.stream(corsAllowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .toList();
+
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000")); 
+        configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Internal-Service-Key"));
         configuration.setAllowCredentials(true);
