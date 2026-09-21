@@ -16,4 +16,6 @@ public interface TelegramLinkTokenRepository extends JpaRepository<TelegramLinkT
     List<TelegramLinkToken> findByStudentId(Long studentId);
 
     void deleteByExpiresAtBefore(Instant now);
+
+    void deleteByStudentId(Long studentId);
 }

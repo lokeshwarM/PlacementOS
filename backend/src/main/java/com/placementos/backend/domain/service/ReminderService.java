@@ -243,4 +243,22 @@ public class ReminderService {
     public Optional<ReminderTask> findById(Long id) {
         return reminderTaskRepository.findById(id);
     }
+
+    /**
+     * Cancels ALL active reminder tasks for a student across all drives.
+     * Used during account deletion to stop all pending deliveries.
+     */
+    @Transactional
+    public void cancelAllRemindersForStudent(Long studentId, String reason) {
+        List<ReminderTask> tasks = reminderTaskRepository.findByStudentId(studentId);
+        for (ReminderTask task : tasks) {
+            if (task.getStatus() == ReminderStatus.PENDING) {
+                task.setStatus(ReminderStatus.CANCELLED);
+                task.setCancelReason(reason);
+                task.setCompletedAt(Instant.now());
+                reminderTaskRepository.save(task);
+                log.info("Cancelled reminder task id={} for student id={}: reason={}", task.getId(), studentId, reason);
+            }
+        }
+    }
 }

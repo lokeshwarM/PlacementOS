@@ -78,8 +78,12 @@ public class AuthenticatedStudentProvider {
         }
 
         final String resolvedIdentifier = identifier;
-        return userAccountRepository.findByEmail(resolvedIdentifier)
+        UserAccount user = userAccountRepository.findByEmail(resolvedIdentifier)
                 .orElseThrow(() -> new AccessDeniedException("No user account found for principal: " + resolvedIdentifier));
+        if (user.isDeleted()) {
+            throw new AccessDeniedException("Account has been deleted");
+        }
+        return user;
     }
 
     /**
@@ -105,6 +109,9 @@ public class AuthenticatedStudentProvider {
         // 1. First check if it's a UserAccount email with a linked Student
         Optional<UserAccount> userOpt = userAccountRepository.findByEmail(identifier);
         if (userOpt.isPresent() && userOpt.get().getStudent() != null) {
+            if (userOpt.get().isDeleted()) {
+                throw new AccessDeniedException("Account has been deleted");
+            }
             return Optional.of(userOpt.get().getStudent());
         }
 

@@ -50,6 +50,14 @@ public class UserAccount {
             columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
     private Instant updatedAt;
 
+    /** Set when the account is soft-deleted. Null means the account is active. */
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    /** Set when student PII has been anonymised. */
+    @Column(name = "anonymized_at")
+    private Instant anonymizedAt;
+
     @PrePersist
     protected void onCreate() {
         Instant now = Instant.now();
@@ -93,6 +101,14 @@ public class UserAccount {
 
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    public Instant getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(Instant deletedAt) { this.deletedAt = deletedAt; }
+
+    public Instant getAnonymizedAt() { return anonymizedAt; }
+    public void setAnonymizedAt(Instant anonymizedAt) { this.anonymizedAt = anonymizedAt; }
+
+    public boolean isDeleted() { return deletedAt != null; }
 
     @Override
     public boolean equals(Object o) {
