@@ -20,9 +20,9 @@ dist/
 # Misc
 .DS_Store
 *.pem
-.env
 .env.*
 !.env.example
+!**/.env.example
 # Celery
 celerybeat-schedule
 celerybeat.pid
